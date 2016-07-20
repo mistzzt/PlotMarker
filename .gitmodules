@@ -1,3 +1,4 @@
 [submodule "TShock"]
 	path = TShock
 	url = https://github.com/mistzzt/TShock.git
+	ignore = dirty
