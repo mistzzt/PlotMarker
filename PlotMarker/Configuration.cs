@@ -10,8 +10,7 @@ namespace PlotMarker
 		public static readonly string ConfigPath = Path.Combine(TShock.SavePath, "PlotMarker.json");
 
 		[JsonProperty("属地样式")]
-		public PlotStyle[] PlotStyles =
-		{
+		public PlotStyle Style =
 			new PlotStyle
 			{
 				Name = "标准",
@@ -20,8 +19,7 @@ namespace PlotMarker
 				TilePaint = 0,
 				WallId = -1,
 				WallPaint = 0
-			}
-		};
+			};
 
 		public static Configuration Read(string path)
 		{
