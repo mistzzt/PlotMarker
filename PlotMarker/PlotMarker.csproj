@@ -40,6 +40,8 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Handlers.cs" />
+    <Compile Include="Plot.cs" />
     <Compile Include="PlotMarker.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

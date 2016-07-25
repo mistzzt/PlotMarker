@@ -5,27 +5,23 @@ using TShockAPI;
 namespace PlotMarker
 {
 	[JsonObject(MemberSerialization.OptIn)]
-	internal class Configuration
+	internal sealed class Configuration
 	{
 		public static readonly string ConfigPath = Path.Combine(TShock.SavePath, "PlotMarker.json");
 
-		//[JsonProperty("格子区域")]
-		//public MazeRegion[] RectRegions = {
-		//	new MazeRegion("例",0, 0, 50, 50)
-		//};
-
-		//[JsonProperty("格子样式")]
-		//public RectStyle[] RectStyles = {
-		//	new RectStyle
-		//	{
-		//		LineWidth = 2,
-		//		Name = "标准",
-		//		TileId = 267,
-		//		TilePaint = 0,
-		//		WallId = -1,
-		//		WallPaint = 0
-		//	}
-		//};
+		[JsonProperty("属地样式")]
+		public PlotStyle[] PlotStyles =
+		{
+			new PlotStyle
+			{
+				Name = "标准",
+				LineWidth = 2,
+				TileId = 267,
+				TilePaint = 0,
+				WallId = -1,
+				WallPaint = 0
+			}
+		};
 
 		public static Configuration Read(string path)
 		{
