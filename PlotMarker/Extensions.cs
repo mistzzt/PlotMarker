@@ -24,7 +24,6 @@ namespace PlotMarker
 		{
 			var info = player.GetData<PlayerInfo>(PlotMarker.PlotMarkerInfoKey);
 #if DEBUG
-			Debugger.Break();
 			info = info.NotNull();
 #else
 			if (info == null)
