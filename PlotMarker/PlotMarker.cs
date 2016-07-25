@@ -20,6 +20,7 @@ namespace PlotMarker
 		public override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
 
 		internal static Configuration Config;
+		internal static PlotManager Plots;
 
 		public PlotMarker(Main game) : base(game) { }
 
@@ -43,6 +44,12 @@ namespace PlotMarker
 		{
 			Config = Configuration.Read(Configuration.ConfigPath);
 			Config.Write(Configuration.ConfigPath);
+
+			Commands.ChatCommands.Add(new Command("pm.user.myplot", MyPlot, "myplot", "属地", "mp")
+			{
+				AllowServer = false,
+				HelpText = "自动分配属地给玩家."
+			});
 		}
 
 		private static void OnGetData(GetDataEventArgs args)
@@ -59,6 +66,11 @@ namespace PlotMarker
 			{
 				args.Handled = Handlers.HandleGetData(type, player, data);
 			}
+		}
+
+		private static void MyPlot(CommandArgs args)
+		{
+			
 		}
 	}
 }
