@@ -31,6 +31,7 @@ namespace PlotMarker
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.NetGetData.Register(this, OnGetData, 1000);
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
+			ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
 		}
 
 		protected override void Dispose(bool disposing)
@@ -40,6 +41,7 @@ namespace PlotMarker
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.NetGetData.Deregister(this, OnGetData);
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
+				ServerApi.Hooks.GamePostInitialize.Deregister(this, OnPostInitialize);
 			}
 			base.Dispose(disposing);
 		}
@@ -55,6 +57,11 @@ namespace PlotMarker
 				AllowServer = false,
 				HelpText = "管理属地."
 			});
+		}
+
+		private static void OnPostInitialize(EventArgs args)
+		{
+			Plots.Reload();
 		}
 
 		private static void OnGreet(GreetPlayerEventArgs args)
@@ -157,6 +164,19 @@ namespace PlotMarker
 				case "m":
 				case "mark":
 					{
+						if (args.Parameters.Count != 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /pm mark <区域名>");
+							return;
+						}
+						var name = args.Parameters[1];
+						var plot = Plots.GetPlotByName(name);
+						if (plot == null)
+						{
+							args.Player.SendErrorMessage("未找到属地!");
+							return;
+						}
+						plot.GenerateCells();
 						
 					}
 					break;
@@ -166,7 +186,52 @@ namespace PlotMarker
 				case "fuck":
 				case "info":
 					{
+						if (args.Parameters.Count != 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /pm info <区域名>");
+							return;
+						}
+						var name = args.Parameters[1];
+						var plot = Plots.GetPlotByName(name);
+						if (plot == null)
+						{
+							args.Player.SendErrorMessage("未找到属地!");
+							return;
+						}
+						args.Player.SendInfoMessage("{0}cells, {1}x{2}cell", plot.Cells.Count, plot.CellWidth, plot.CellHeight);
+					}
+					break;
+				case "列表":
+				case "列":
+				case "l":
+				case "list":
+					{
+						int pageNumber;
+						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+						{
+							return;
+						}
 
+						var plots = Plots.Plots.Select(p => $"{p.Name}({p.X}, {p.Y}, {p.Width}, {p.Height})");
+
+						PaginationTools.SendPage(args.Player, pageNumber, PaginationTools.BuildLinesFromTerms(plots),
+							new PaginationTools.Settings
+							{
+								HeaderFormat = "属地列表 ({0}/{1}):",
+								FooterFormat = "键入 {0}pm list {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
+								NothingToDisplayString = "当前没有属地."
+							});
+					}
+					break;
+				case "重":
+				case "重载":
+				case "r":
+				case "reload":
+					{
+						Plots.Reload();
+						Config = Configuration.Read(Configuration.ConfigPath);
+						Config.Write(Configuration.ConfigPath);
+						args.Player.SendSuccessMessage("重载完毕.");
 					}
 					break;
 				case "帮助":
