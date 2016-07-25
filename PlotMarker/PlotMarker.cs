@@ -15,7 +15,7 @@ namespace PlotMarker
 	public sealed class PlotMarker : TerrariaPlugin
 	{
 		public override string Name => "PlotMarker";
-		public override string Author => "MistZZT & XiaoR";
+		public override string Author => "MR.H";
 		public override string Description => "Marks plots for players and manages them.";
 		public override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
 
