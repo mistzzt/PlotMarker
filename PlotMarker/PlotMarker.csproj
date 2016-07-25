@@ -53,6 +53,7 @@
     <Compile Include="PlotMarker.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TileHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TShock\TerrariaServerAPI\TerrariaServer.csproj">

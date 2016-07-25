@@ -63,14 +63,15 @@ namespace PlotMarker
 		private static bool HandleTile(GetDataHandlerArgs args)
 		{
 			var info = args.Player.GetInfo();
-
-			if (info.Point != 0)
+			using (var reader = new BinaryReader(args.Data))
 			{
-				using (var reader = new BinaryReader(args.Data))
+				reader.ReadByte();
+				int x = reader.ReadInt16();
+				int y = reader.ReadInt16();
+				args.Player.SendInfoMessage($"{{{x}, {y}}}");
+
+				if (info.Point != 0)
 				{
-					reader.ReadByte();
-					int x = reader.ReadInt16();
-					int y = reader.ReadInt16();
 					if (x >= 0 && y >= 0 && x < Main.maxTilesX && y < Main.maxTilesY)
 					{
 						if (info.Point == 1)
@@ -94,7 +95,24 @@ namespace PlotMarker
 						return true;
 					}
 				}
+				var plot = PlotMarker.Plots.Plots.FirstOrDefault(p => new Rectangle(p.X, p.Y, p.Width, p.Height).Contains(x, y));
+				if (plot != null)
+				{
+					var style = PlotMarker.Config.PlotStyle;
+					var cellX = plot.CellWidth + style.LineWidth;
+					var cellY = plot.CellHeight + style.LineWidth;
+
+					if ((x - plot.X) % cellX < style.LineWidth || (y - plot.Y) % cellY < style.LineWidth)
+					{
+						args.Player.SendInfoMessage("这是墙");
+					}
+					else
+					{
+						args.Player.SendSuccessMessage("这不强!");
+					}
+				}
 			}
+				
 			return false;
 		}
 
