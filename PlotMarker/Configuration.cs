@@ -10,11 +10,12 @@ namespace PlotMarker
 		public static readonly string ConfigPath = Path.Combine(TShock.SavePath, "PlotMarker.json");
 
 		[JsonProperty("属地样式")]
-		public PlotStyle Style =
-			new PlotStyle
+		public Style PlotStyle =
+			new Style
 			{
-				Name = "标准",
-				LineWidth = 2,
+				LineWidth = 3,
+				CellWidth = 40,
+				CellHeight = 30,
 				TileId = 267,
 				TilePaint = 0,
 				WallId = -1,
