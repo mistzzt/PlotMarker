@@ -30,6 +30,7 @@ namespace PlotMarker
 		{
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.NetGetData.Register(this, OnGetData, 1000);
+			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
 		}
 
 		protected override void Dispose(bool disposing)
@@ -38,6 +39,7 @@ namespace PlotMarker
 			{
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.NetGetData.Deregister(this, OnGetData);
+				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
 			}
 			base.Dispose(disposing);
 		}
@@ -46,12 +48,24 @@ namespace PlotMarker
 		{
 			Config = Configuration.Read(Configuration.ConfigPath);
 			Config.Write(Configuration.ConfigPath);
+			Plots = new PlotManager(TShock.DB);
 
 			Commands.ChatCommands.Add(new Command("pm.admin.plotmanage", PlotManage, "pm", "属地", "plotmanage")
 			{
 				AllowServer = false,
 				HelpText = "管理属地."
 			});
+		}
+
+		private static void OnGreet(GreetPlayerEventArgs args)
+		{
+#if DEBUG
+			var player = TShock.Players[args.Who].NotNull();
+#else
+			var player = TShock.Players[args.Who];
+			player?.SetData(PlotMarkerInfoKey, new PlayerInfo());
+#endif
+			player.SetData(PlotMarkerInfoKey, new PlayerInfo());
 		}
 
 		private static void OnGetData(GetDataEventArgs args)
@@ -83,13 +97,13 @@ namespace PlotMarker
 				{
 					if (args.Parameters.Count != 2)
 					{
-						args.Player.SendErrorMessage("语法无效. 正确语法: /mp point <1/2>");
+						args.Player.SendErrorMessage("语法无效. 正确语法: /pm point <1/2>");
 						return;
 					}
 					byte point;
 					if (!byte.TryParse(args.Parameters[1], out point) || point > 2 || point < 1)
 					{
-							args.Player.SendErrorMessage("选点无效. 正确: /mp point <1/2>");
+							args.Player.SendErrorMessage("选点无效. 正确: /pm point <1/2>");
 							return;
 					}
 					info.Point = point;
@@ -115,9 +129,9 @@ namespace PlotMarker
 				case "d":
 				case "define":
 					{
-						if (args.Parameters.Count > 3 || args.Parameters.Count < 2)
+						if (args.Parameters.Count != 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm define <区域名> [初始方案]");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /pm define <区域名>");
 							return;
 						}
 						if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -125,6 +139,17 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("你需要先选择区域.");
 							return;
 						}
+						if (Plots.AddPlot(info.X, info.Y, info.X2 - info.X, info.Y2 - info.Y,
+							args.Parameters[1], args.Player.Name,
+							Main.worldID.ToString(), Config.PlotStyle))
+						{
+							args.Player.SendSuccessMessage("添加属地 {0} 完毕.", args.Parameters[1]);
+						}
+						else
+						{
+							args.Player.SendSuccessMessage("属地 {0} 已经存在, 请更换属地名后重试.", args.Parameters[1]);
+						}
+						
 					}
 					break;
 				case "划":
@@ -132,7 +157,7 @@ namespace PlotMarker
 				case "m":
 				case "mark":
 					{
-
+						
 					}
 					break;
 				case "查":
