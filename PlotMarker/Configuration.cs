@@ -16,10 +16,10 @@ namespace PlotMarker
 				LineWidth = 3,
 				CellWidth = 40,
 				CellHeight = 30,
-				TileId = 267,
-				TilePaint = 0,
-				WallId = -1,
-				WallPaint = 0
+				TileId = 161,
+				TilePaint = 21,
+				WallId = 127,
+				WallPaint = 21
 			};
 
 		public static Configuration Read(string path)
