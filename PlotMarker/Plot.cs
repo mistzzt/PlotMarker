@@ -8,13 +8,27 @@ using TShockAPI.DB;
 
 namespace PlotMarker
 {
-	internal sealed class PlotRegion
+	internal sealed class Plot
 	{
-		public Rectangle Area { get; set; }
+		public int Id { get; set; }
+
+		public string Name { get; set; }
+		
+		public int X { get; set; }
+
+		public int Y { get; set; }
+
+		public int Width { get; set; }
+
+		public int Height { get; set; }
 
 		public int CellWidth { get; set; }
 
 		public int CellHeight { get; set; }
+
+		public string WorldId { get; set; }
+
+		public string Owner { get; set; }
 
 		public void GenerateCells(bool empty = true)
 		{
@@ -22,16 +36,24 @@ namespace PlotMarker
 		}
 	}
 
-	internal sealed class PlotCell
+	internal sealed class Cell
 	{
+		public int Id { get; set; }
+
+		public Plot Parent { get; set; }
+
+		public int X { get; set; }
+
+		public int Y { get; set; }
+
 		public string Owner { get; set; }
 
-		public Rectangle Area { get; set; }
+		public DateTime GetTime { get; set; }
 
 		public List<int> AllowedIDs { get; set; }
 	}
 
-	internal sealed class PlotStyle
+	internal sealed class Style
 	{
 		public string Name { get; set; }
 		
