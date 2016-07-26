@@ -123,8 +123,18 @@ namespace PlotMarker
 			{
 				throw new ArgumentException("物块坐标必须在本属地内部!");
 			}
+			var style = PlotMarker.Config.PlotStyle;
+			var cellX = CellWidth + style.LineWidth;
+			var cellY = CellHeight + style.LineWidth;
+			var numX = (Width - style.LineWidth)/cellX;
+			var numY = (Height - style.LineWidth)/cellY;
+			var x = tileX - X;
+			var y = tileY - Y;
 
-			throw new NotImplementedException();
+			// 从上至下再从左到右计数
+			return numY * (x / cellX) + y / cellY;
+			// 从左到右再从上到下计数
+			//return numX*(x/cellY) + y/cellX;
 		}
 	}
 
