@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using TShockAPI;
 using TShockAPI.DB;
 
 namespace PlotMarker
@@ -51,7 +52,7 @@ namespace PlotMarker
 		/// 生成格子并记录格子数值到数据库.
 		/// </summary>
 		/// <param name="empty"> 是否清空区域/适合修复格子 </param>
-		public void GenerateCells(GetDataHandlerArgs args,bool empty = true)
+		public void GenerateCells(bool empty = true)
 		{
 			if (empty)
 			{
@@ -63,10 +64,8 @@ namespace PlotMarker
 			var cellY = CellHeight + style.LineWidth;
 			var numX = (Width - style.LineWidth) / cellX;
 			var numY = (Height - style.LineWidth) / cellY;
-			//args.Player.SendInfoMessage("设计宽度{0}，高度{1}",Width,Height);
 			Width = numX*cellX + style.LineWidth;
 			Height = numY*cellY + style.LineWidth;
-			//args.Player.SendInfoMessage("新宽度{0}，高度{1}", Width, Height);
 
 			//draw horizental line
 			for (var y = 0; y < numY; y++)
@@ -82,7 +81,7 @@ namespace PlotMarker
 			}
 
 			//draw vertical line
-			for (var x = 0; x < numX; x = x++)
+			for (var x = 0; x < numX; x++)
 			{
 				for (var y = 0; y < Height; y++)
 				{
@@ -97,9 +96,9 @@ namespace PlotMarker
 			TileHelper.ResetSection(X, Y, Width, Height);
 
 			Cells.Clear();
-			for (var x = 0; x < numX; x = x ++)
+			for (var x = 0; x < numX; x++)
 			{
-				for (var y = 0; y < numY; y = y ++)
+				for (var y = 0; y < numY; y++)
 				{
 					var cell = new Cell
 					{
@@ -110,11 +109,15 @@ namespace PlotMarker
 						Owner = Owner,
 						AllowedIDs = new List<int>()
 					};
-					//new Rectangle(startX + x + style.LineWidth, startY + y + style.LineWidth, style.RoomWidth, style.RoomHeight)
 					Cells.Add(cell);
 				}
 			}
 			PlotMarker.Plots.AddCells(this);
+		}
+
+		public async void Generate(bool clear = true)
+		{
+			await Task.Run(() => GenerateCells(clear));
 		}
 
 		/// <summary>
