@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using TShockAPI;
 using TShockAPI.DB;
 
 namespace PlotMarker
@@ -61,29 +62,33 @@ namespace PlotMarker
 			var style = PlotMarker.Config.PlotStyle;
 			var cellX = CellWidth + style.LineWidth;
 			var cellY = CellHeight + style.LineWidth;
+			var numX = (Width - style.LineWidth) / cellX;
+			var numY = (Height - style.LineWidth) / cellY;
+			Width = numX*cellX + style.LineWidth;
+			Height = numY*cellY + style.LineWidth;
 
 			//draw horizental line
-			for (var y = 0; y < Height; y = y + cellY)
+			for (var y = 0; y <= numY; y++)
 			{
 				for (var x = 0; x < Width; x++)
 				{
 					for (var t = 0; t < style.LineWidth; t++)
 					{
-						TileHelper.SetTile(X + x, Y + y + t, style.TileId, style.TilePaint);
-						TileHelper.SetWall(X + x, Y + y + t, style.WallId, style.WallPaint);
+						TileHelper.SetTile(X + x, Y + y*cellY + t, style.TileId, style.TilePaint);
+						TileHelper.SetWall(X + x, Y + y*cellY + t, style.WallId, style.WallPaint);
 					}
 				}
 			}
 
 			//draw vertical line
-			for (var x = 0; x < Width; x = x + cellX)
+			for (var x = 0; x <= numX; x++)
 			{
 				for (var y = 0; y < Height; y++)
 				{
 					for (var t = 0; t < style.LineWidth; t++)
 					{
-						TileHelper.SetTile(X + x + t, Y + y, style.TileId, style.TilePaint);
-						TileHelper.SetWall(X + x + t, Y + y, style.WallId, style.WallPaint);
+						TileHelper.SetTile(X + x*cellX + t, Y + y, style.TileId, style.TilePaint);
+						TileHelper.SetWall(X + x*cellX + t, Y + y, style.WallId, style.WallPaint);
 					}
 				}
 			}
@@ -91,24 +96,28 @@ namespace PlotMarker
 			TileHelper.ResetSection(X, Y, Width, Height);
 
 			Cells.Clear();
-			for (var x = 0; x < Width; x = x + cellX)
+			for (var x = 0; x < numX; x++)
 			{
-				for (var y = 0; y < Height; y = y + cellY)
+				for (var y = 0; y < numY; y++)
 				{
 					var cell = new Cell
 					{
 						Id = Cells.Count,
 						Parent = this,
-						X = X + x + style.LineWidth,
-						Y = Y + y + style.LineWidth,
+						X = X + x*cellX + style.LineWidth,
+						Y = Y + y*cellY + style.LineWidth,
 						Owner = Owner,
 						AllowedIDs = new List<int>()
 					};
-					//new Rectangle(startX + x + style.LineWidth, startY + y + style.LineWidth, style.RoomWidth, style.RoomHeight)
 					Cells.Add(cell);
 				}
 			}
 			PlotMarker.Plots.AddCells(this);
+		}
+
+		public async void Generate(bool clear = true)
+		{
+			await Task.Run(() => GenerateCells(clear));
 		}
 
 		/// <summary>
@@ -126,8 +135,7 @@ namespace PlotMarker
 			var style = PlotMarker.Config.PlotStyle;
 			var cellX = CellWidth + style.LineWidth;
 			var cellY = CellHeight + style.LineWidth;
-			var numX = (Width - style.LineWidth)/cellX;
-			var numY = (Height - style.LineWidth)/cellY;
+			var numY = (Height - style.LineWidth) / cellY;
 			var x = tileX - X;
 			var y = tileY - Y;
 

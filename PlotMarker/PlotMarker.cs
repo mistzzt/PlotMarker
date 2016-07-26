@@ -164,9 +164,9 @@ namespace PlotMarker
 				case "m":
 				case "mark":
 					{
-						if (args.Parameters.Count != 2)
+						if (args.Parameters.Count < 2 || args.Parameters.Count > 3)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm mark <区域名>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /pm mark <区域名> [Clear:true/false]");
 							return;
 						}
 						var name = args.Parameters[1];
@@ -176,8 +176,22 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("未找到属地!");
 							return;
 						}
-						plot.GenerateCells();
-						
+						var clear = true;
+						if (args.Parameters.Count == 3)
+						{
+							switch (args.Parameters[2].ToLower())
+							{
+								case "true":
+									break;
+								case "false":
+									clear = false;
+									break;
+								default:
+									args.Player.SendErrorMessage("Clear属性值只能为 true/false");
+									return;
+							}
+						}
+						plot.Generate(clear);
 					}
 					break;
 				case "查":
@@ -198,7 +212,24 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("未找到属地!");
 							return;
 						}
-						args.Player.SendInfoMessage("{0}cells, {1}x{2}cell", plot.Cells.Count, plot.CellWidth, plot.CellHeight);
+						int pageNumber;
+						if (!PaginationTools.TryParsePageNumber(args.Parameters, 2, args.Player, out pageNumber))
+						{
+							return;
+						}
+						var list = new List<string>
+						{
+							$" * 区域信息: {{{plot.X}, {plot.Y}, {plot.Width}, {plot.Height}}}}}",
+							$" * 格子信息: w={plot.CellWidth}, h={plot.CellHeight}, cur={plot.Cells.Count}",
+							$" * 创建者名: {plot.Owner}"
+						};
+						PaginationTools.SendPage(args.Player, pageNumber, list,
+							new PaginationTools.Settings
+							{
+								HeaderFormat = "属地 " + plot.Name + " 说明 ({0}/{1}):",
+								FooterFormat = "键入 {0}pm info {1} {{0}} 以获取下一页列表.".SFormat(Commands.Specifier, plot.Name),
+								NothingToDisplayString = "当前没有说明."
+							});
 					}
 					break;
 				case "列表":
@@ -212,7 +243,7 @@ namespace PlotMarker
 							return;
 						}
 
-						var plots = Plots.Plots.Select(p => $"{p.Name}({p.X}, {p.Y}, {p.Width}, {p.Height})");
+						var plots = Plots.Plots.Select(p => p.Name);
 
 						PaginationTools.SendPage(args.Player, pageNumber, PaginationTools.BuildLinesFromTerms(plots),
 							new PaginationTools.Settings
@@ -238,12 +269,35 @@ namespace PlotMarker
 				case "h":
 				case "help":
 					{
-
+						int pageNumber;
+						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+						{
+							return;
+						}
+						var list = new List<string>
+						{
+							"point <1/2> - 选中点",
+							"area - 选择区域",
+							"define <属地名> - 定义属地",
+							"mark <属地名> - 在属地中生成格子",
+							"info <属地名> - 查看属地属性",
+							"list [页码] - 查看现有的属地",
+							"help [页码] - 获取帮助",
+							"reload - 载入数据库数据"
+						};
+						PaginationTools.SendPage(args.Player, pageNumber, list,
+							new PaginationTools.Settings
+							{
+								HeaderFormat = "属地管理子指令说明 ({0}/{1}):",
+								FooterFormat = "键入 {0}pm help {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
+								NothingToDisplayString = "当前没有说明."
+							});
 					}
 					break;
 				default:
 					{
-
+						args.Player.SendWarningMessage("子指令无效! 输入 {0} 获取帮助信息.",
+							TShock.Utils.ColorTag("/pm help", Color.Cyan));
 					}
 					break;
 			}
