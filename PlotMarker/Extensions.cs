@@ -34,5 +34,42 @@ namespace PlotMarker
 #endif
 			return info;
 		}
+
+		public static bool BlockModify(this TSPlayer player, int tileX, int tileY)
+		{
+			if (!player.IsLoggedIn)
+			{
+				return true;
+			}
+
+			if (player.HasPermission("pm.build.everywhere"))
+			{
+				return false;
+			}
+
+			var plot = PlotMarker.Plots.Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
+			if (plot == null)
+			{
+				return false;
+			}
+			if (plot.Owner == player.Name && player.IsLoggedIn)
+			{
+				return false;
+			}
+			if (plot.IsWall(tileX, tileY) && player.HasPermission("pm.build.wall"))
+			{
+				return false;
+			}
+			var index = plot.FindCell(tileX, tileY);
+			if (index > -1 && index < plot.Cells.Count)
+			{
+				if (plot.Cells[index].Owner == player.Name)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
 	}
 }

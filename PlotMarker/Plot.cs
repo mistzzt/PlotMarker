@@ -120,6 +120,11 @@ namespace PlotMarker
 			await Task.Run(() => GenerateCells(clear));
 		}
 
+		public bool Contains(int x, int y)
+		{
+			return X <= x && x < X + Width && Y <= y && y < Y + Height;
+		}
+
 		/// <summary>
 		/// 根据物块坐标寻找Cell索引.
 		/// </summary>
@@ -143,6 +148,15 @@ namespace PlotMarker
 			return numY * (x / cellX) + y / cellY;
 			// 从左到右再从上到下计数
 			//return numX*(x/cellY) + y/cellX;
+		}
+
+		public bool IsWall(int tileX, int tileY)
+		{
+			var style = PlotMarker.Config.PlotStyle;
+			var cellX = CellWidth + style.LineWidth;
+			var cellY = CellHeight + style.LineWidth;
+
+			return (tileX - X)%cellX < style.LineWidth || (tileY - Y)%cellY < style.LineWidth;
 		}
 	}
 
@@ -171,6 +185,11 @@ namespace PlotMarker
 
 		/// <summary> 有权限动属地者 </summary>
 		public List<int> AllowedIDs { get; set; }
+
+		public bool Contains(int x, int y)
+		{
+			return X <= x && x < X + Parent.CellWidth && Y <= y && y < Y + Parent.CellHeight;
+		}
 	}
 
 	internal sealed class Style
