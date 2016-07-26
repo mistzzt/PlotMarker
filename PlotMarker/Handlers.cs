@@ -116,6 +116,22 @@ namespace PlotMarker
 			return false;
 		}
 
+		/*
+		x,y 当前点坐标，请传入相对坐标 （x - plot.X  y - plot.Y）
+		cellX,cellY 区块大小，请包括墙的厚度 （plot.CellWidth + style.LineWidth)
+		numX,numY 横竖区块数量，我之前代码里有但是注释掉了
+		代码划分区域时，只保证空白区域正确性，对于墙和建筑区外区域不保证正确结果
+		编号从0开始，可以额外加1变成从1开始
+		*/
+
+		public static int WhichArea(int x,int y,int cellX,int cellY,int numX,int numY)
+		{
+			//从上至下再从左到右计数
+			return numY*(x/cellX) + y/cellY;
+			//从左到右再从上到下计数
+			return numX*(y/cellY) + x/cellX;
+		}
+
 		private static bool HandlePlaceObject(GetDataHandlerArgs args)
 		{
 			return false;
