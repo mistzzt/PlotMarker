@@ -31,5 +31,10 @@ namespace PlotMarker
 		}
 
 		public byte Point = 0;
+
+		/// <summary>
+		/// Permission to build message cool down.
+		/// </summary>
+		public long BPm = 1;
 	}
 }
