@@ -68,7 +68,7 @@ namespace PlotMarker
 			Height = numY*cellY + style.LineWidth;
 
 			//draw horizental line
-			for (var y = 0; y < numY; y++)
+			for (var y = 0; y <= numY; y++)
 			{
 				for (var x = 0; x < Width; x++)
 				{
@@ -81,7 +81,7 @@ namespace PlotMarker
 			}
 
 			//draw vertical line
-			for (var x = 0; x < numX; x++)
+			for (var x = 0; x <= numX; x++)
 			{
 				for (var y = 0; y < Height; y++)
 				{
