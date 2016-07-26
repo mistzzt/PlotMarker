@@ -11,28 +11,46 @@ namespace PlotMarker
 {
 	internal sealed class Plot
 	{
+		/// <summary> 属地在数据库中的Id </summary>
 		public int Id { get; set; }
 
+		/// <summary> 属地的名字 </summary>
 		public string Name { get; set; }
-		
+
+		/// <summary> 属地的起始X坐标 </summary>
 		public int X { get; set; }
 
+		/// <summary> 属地的起始Y坐标 </summary>
 		public int Y { get; set; }
 
+		/// <summary> 属地的宽 </summary>
 		public int Width { get; set; }
 
+		/// <summary> 属地的高 </summary>
 		public int Height { get; set; }
 
+		/// <summary> 小块区域的宽 </summary>
 		public int CellWidth { get; set; }
 
+		/// <summary> 小块区域的高 </summary>
 		public int CellHeight { get; set; }
 
+		/// <summary> 地图Id </summary>
 		public string WorldId { get; set; }
 
+		/// <summary> 整片属地的拥有者 </summary>
 		public string Owner { get; set; }
 
+		/// <summary>
+		/// 小块区域的引用. 其中数组索引就是 <see cref="Cell.Id"/> ,
+		/// 而顺序(数组索引)是按照 <see cref="Plot.GenerateCells"/> 中添加列表的顺序来
+		/// </summary>
 		public List<Cell> Cells { get; set; } = new List<Cell>();
 
+		/// <summary>
+		/// 生成格子并记录格子数值到数据库.
+		/// </summary>
+		/// <param name="empty"> 是否清空区域/适合修复格子 </param>
 		public void GenerateCells(bool empty = true)
 		{
 			if (empty)
@@ -92,22 +110,48 @@ namespace PlotMarker
 			}
 			PlotMarker.Plots.AddCells(this);
 		}
+
+		/// <summary>
+		/// 根据物块坐标寻找Cell索引.
+		/// </summary>
+		/// <param name="tileX">物块X坐标(必须在属地内)</param>
+		/// <param name="tileY">物块Y坐标(必须在属地内)</param>
+		/// <returns><see cref="Cells"/>索引</returns>
+		public int FindCell(int tileX, int tileY)
+		{
+			if (!new Rectangle(X, Y, Width, Height).Contains(tileX, tileY))
+			{
+				throw new ArgumentException("物块坐标必须在本属地内部!");
+			}
+
+			throw new NotImplementedException();
+		}
 	}
 
 	internal sealed class Cell
 	{
+		/// <summary> Cell在 <see cref="Plot.Cells"/> 的索引 </summary>
 		public int Id { get; set; }
 
+		/// <summary> Cell所属的 <see cref="Plot"/> 引用 </summary>
 		public Plot Parent { get; set; }
 
+		/// <summary> Cell的起始X坐标 </summary>
 		public int X { get; set; }
 
+		/// <summary> Cell的起始X坐标 </summary>
 		public int Y { get; set; }
 
+		/// <summary> 属地的主人 </summary>
 		public string Owner { get; set; }
 
+		/// <summary>
+		/// 玩家 <see cref="Owner"/> 领取属地的时间
+		/// 用于判定过期 
+		/// </summary>
 		public DateTime GetTime { get; set; }
 
+		/// <summary> 有权限动属地者 </summary>
 		public List<int> AllowedIDs { get; set; }
 	}
 
