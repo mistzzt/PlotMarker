@@ -68,7 +68,6 @@ namespace PlotMarker
 				reader.ReadByte();
 				int x = reader.ReadInt16();
 				int y = reader.ReadInt16();
-				args.Player.SendInfoMessage($"{{{x}, {y}}}");
 
 				if (info.Point != 0)
 				{
@@ -95,22 +94,11 @@ namespace PlotMarker
 						return true;
 					}
 				}
-				var plot = PlotMarker.Plots.Plots.FirstOrDefault(p => new Rectangle(p.X, p.Y, p.Width, p.Height).Contains(x, y));
-				if (plot != null)
-				{
-					var style = PlotMarker.Config.PlotStyle;
-					var cellX = plot.CellWidth + style.LineWidth;
-					var cellY = plot.CellHeight + style.LineWidth;
 
-					if ((x - plot.X) % cellX < style.LineWidth || (y - plot.Y) % cellY < style.LineWidth)
-					{
-						args.Player.SendInfoMessage("这是墙");
-					}
-					else
-					{
-						args.Player.SendSuccessMessage("这不强!");
-					}
-					args.Player.SendInfoMessage("区块id={0}", plot.FindCell(x, y));
+				if (PlotMarker.BlockModify(args.Player, x, y))
+				{
+					args.Player.SendTileSquare(x, y, 3);
+					return true;
 				}
 			}
 				
