@@ -1,8 +1,10 @@
 ﻿using System;
 using Terraria;
+using TShockAPI;
 
 namespace PlotMarker
 {
+	internal delegate void GetPoint(int tileX, int tileY, TSPlayer receiver);
 	internal class PlayerInfo
 	{
 		private int _x = -1;
@@ -34,9 +36,11 @@ namespace PlotMarker
 
 		/// <summary>
 		/// 玩家选取点坐标的状态.
-		/// 1/2: 选两点, 3: 选区域, 4: 选点确定自己属地
+		/// 1/2: 选两点, 3: 选区域, 4: 选点确定自己属地, 5: 触发事件
 		/// </summary>
 		public byte Point = 0;
+
+		public GetPoint OnGetPoint;
 
 		/// <summary>
 		/// Permission to build message cool down.

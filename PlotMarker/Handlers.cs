@@ -90,6 +90,10 @@ namespace PlotMarker
 							info.CellPoint = new Point(x, y);
 							args.Player.SendInfoMessage("设定临时点坐标完毕.");
 						}
+						else if (info.Point == 5)
+						{
+							info.OnGetPoint?.Invoke(x, y, args.Player);
+						}
 						info.Point = 0;
 						args.Player.SendTileSquare(x, y, 3);
 						return true;
@@ -148,6 +152,10 @@ namespace PlotMarker
 							{
 								data.CellPoint = new Point(startX, startY);
 								args.Player.SendInfoMessage("设定临时点坐标完毕.");
+							}
+							else if (data.Point == 5)
+							{
+								data.OnGetPoint?.Invoke(startX, startY, args.Player);
 							}
 						}
 						else
