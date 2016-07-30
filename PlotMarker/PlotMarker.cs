@@ -361,6 +361,14 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("语法无效. 正确语法: /gm get");
 							return;
 						}
+
+						var count = Plots.GetTotalCells(args.Player.User.Name);
+						var max = args.Player.GetMaxCells();
+						if (max != -1 && count >= args.Player.GetMaxCells())
+						{
+							args.Player.SendErrorMessage("你无法获取更多属地. (你当前有{0}个/最多{1}个)", count, max);
+							return;
+						}
 						info.Point = 5;
 						info.OnGetPoint = (x, y, receiver) =>
 						{

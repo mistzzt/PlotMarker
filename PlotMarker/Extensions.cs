@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TShockAPI;
 
@@ -33,6 +34,26 @@ namespace PlotMarker
 			}
 #endif
 			return info;
+		}
+
+		public static int GetMaxCells(this TSPlayer player)
+		{
+			if (!player.IsLoggedIn)
+			{
+				return 0;
+			}
+			if (player.HasPermission("pm.cell.infinite"))
+			{
+				return -1;
+			}
+			for (var i = 0; i < player.Group.permissions.Count; i++)
+			{
+				var perm = player.Group.permissions[i];
+				var match = Regex.Match(perm, @"^pm\.cell\.(\d{1,9})$");
+				if (match.Success)
+					return int.Parse(match.Groups[1].Value);
+			}
+			return 1;
 		}
 	}
 }

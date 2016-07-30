@@ -419,6 +419,22 @@ namespace PlotMarker
 			cell.ClearTiles();
 		}
 
+		public int GetTotalCells(string playerName)
+		{
+			const string query = @"SELECT COUNT(*) FROM `cells`, `plots`
+WHERE `plots`.`WorldId` = @0
+AND `cells`.`Position` LIKE CONCAT(`plots`.`Id`, ':%')
+AND `cells`.`Owner` = @1";
+			using (var reader = _database.QueryReader(query, Main.worldID.ToString(), playerName))
+			{
+				if (reader.Read())
+				{
+					return reader.Get<int>("COUNT(*)");
+				}
+			}
+			throw new Exception("数据库错误");
+		}
+
 		private static int GetCellIndex(Plot plot, QueryResult reader)
 		{
 			var text = reader.Get<string>("Position");
