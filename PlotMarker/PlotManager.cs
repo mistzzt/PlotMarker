@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data;
-using System.Data.SqlTypes;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using MySql.Data.MySqlClient;
 using Terraria;
 using TShockAPI;
@@ -96,20 +92,44 @@ namespace PlotMarker
 		public List<Cell> LoadCells(Plot parent)
 		{
 			var list = new List<Cell>();
-			using (var reader = _database.QueryReader("SELECT * FROM `cells` WHERE `cells`.`Position` LIKE @0 ORDER BY `cells`.`Id` ASC", string.Concat(parent.Id, ":%")))
+			using (var reader = _database.QueryReader("SELECT * FROM `cells` WHERE `cells`.`Position` LIKE @0 ORDER BY `cells`.`Id` ASC",
+				string.Concat(parent.Id, ":%")))
 			{
 				while (reader.Read())
 				{
 					DateTime dt;
-					list.Add(new Cell
+					var cell = new Cell
 					{
 						Parent = parent,
-						Id = GetIndex(parent, reader),
+						Id = GetCellIndex(parent, reader),
 						X = reader.Get<int>("X"),
 						Y = reader.Get<int>("Y"),
 						Owner = reader.Get<string>("Owner"),
-						GetTime = DateTime.TryParse(reader.Get<string>("GetTime"), out dt) ? dt : default(DateTime)
-					});
+						GetTime = DateTime.TryParse(reader.Get<string>("GetTime"), out dt) ? dt : default(DateTime),
+						AllowedIDs = new List<int>()
+					};
+					var mergedids = reader.Get<string>("UserIds") ?? "";
+					var splitids = mergedids.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+					try
+					{
+						for (var i = 0; i < splitids.Length; i++)
+						{
+							int userid;
+
+							if (int.TryParse(splitids[i], out userid)) // if unparsable, it's not an int, so silently skip
+								cell.AllowedIDs.Add(userid);
+							else
+								TShock.Log.Warn("UserIDs 有一列不可用数据: " + splitids[i]);
+						}
+					}
+					catch (Exception e)
+					{
+						TShock.Log.Error("数据库中含有无效的用户ID. (UserIDs 数据类型是整数).");
+						TShock.Log.Error("很多操作会受到影响. 你必须手动删除这些数据并修复.");
+						TShock.Log.Error(e.ToString());
+						TShock.Log.Error(e.StackTrace);
+					}
+					list.Add(cell);
 				}
 #if DEBUG
 				for (var i = 0; i < list.Count; i++)
@@ -161,7 +181,7 @@ namespace PlotMarker
 			}
 			catch (MySqlException ex)
 			{
-				if (ex.Number == (int) MySqlErrorCode.DuplicateKeyEntry)
+				if (ex.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
 				{
 					return false;
 				}
@@ -176,11 +196,32 @@ namespace PlotMarker
 			return false;
 		}
 
+		public bool DelPlot(Plot plot)
+		{
+			if (plot == null || !Plots.Contains(plot))
+			{
+				return false;
+			}
+			try
+			{
+				Plots.Remove(plot);
+				_database.Query("DELETE FROM Cells WHERE Position LIKE @0", string.Concat(plot.Id, ":%"));
+				_database.Query("DELETE FROM Plots WHERE Id = @0", plot.Id);
+				return true;
+			}
+			catch (Exception e)
+			{
+				TShock.Log.ConsoleError("[PlotMarker] 删除属地期间出现异常.");
+				TShock.Log.Error(e.ToString());
+			}
+			return false;
+		}
+
 		public void AddCells(Plot plot)
 		{
 			lock (_addCellLock)
 			{
-				_database.Query("DELETE FROM Cells WHERE Position LIKE @0", plot.Id + ":%");
+				_database.Query("DELETE FROM Cells WHERE Position LIKE @0", string.Concat(plot.Id, ":%"));
 				var stopwatch = new Stopwatch();
 				stopwatch.Start();
 				var count = 0;
@@ -190,7 +231,10 @@ namespace PlotMarker
 					count++;
 				}
 				stopwatch.Stop();
-				Console.WriteLine("记录完毕. 共有{0}个. ({1}ms)", count.ToString(), stopwatch.ElapsedMilliseconds.ToString());
+				TShock.Log.Info("记录完毕. 共有{0}个. ({1}ms)", count, stopwatch.ElapsedMilliseconds);
+#if DEBUG
+				Console.WriteLine("记录完毕. 共有{0}个. ({1}ms)", count, stopwatch.ElapsedMilliseconds);
+#endif
 			}
 		}
 
@@ -199,8 +243,8 @@ namespace PlotMarker
 			try
 			{
 				if (_database.Query(
-					"INSERT INTO Cells (Position, X, Y) VALUES (@0, @1, @2);",
-					string.Concat(cell.Parent.Id, ':', cell.Id), cell.X, cell.Y) == 1)
+					"INSERT INTO Cells (Position, X, Y, UserIds, Owner, GetTime) VALUES (@0, @1, @2, @3, @4, @5);",
+					string.Concat(cell.Parent.Id, ':', cell.Id), cell.X, cell.Y, string.Empty, string.Empty, string.Empty) == 1)
 					return;
 				throw new Exception("No affected rows.");
 			}
@@ -211,17 +255,18 @@ namespace PlotMarker
 			}
 		}
 
+#if random_pick
 		public void ApplyForCell(TSPlayer player, Plot plot)
 		{
 			try
 			{
-				if (plot.Cells.All(c => !string.IsNullOrWhiteSpace(c.Owner)))
+				if (plot.Cells.TrueForAll(c => !string.IsNullOrWhiteSpace(c.Owner)))
 				{
 					player.SendWarningMessage("操作失败. 没有剩余区域了.");
 					return;
 				}
 				Cell cell = null;
-				for (var i = plot.Cells.Count - 1; i > 0; i--)
+				for (var i = plot.Cells.Count - 1; i >= 0; i--)
 				{
 					if (string.IsNullOrWhiteSpace(plot.Cells[i].Owner))
 					{
@@ -232,13 +277,130 @@ namespace PlotMarker
 				cell.Owner = player.Name;
 				cell.GetTime = DateTime.Now;
 
-				//_database.Query("UPDATE")
-
+				if (_database.Query("UPDATE `cells` SET `Owner` = @0 WHERE `cells`.`Position` = @1;",
+					player.User.Name,
+					string.Concat(plot.Id, ':', cell.Id)) == 1)
+				{
+					player.SendSuccessMessage("系统已经分配给你一块地.");
+					return;
+				}
+				throw new Exception("No affected rows.");
 			}
 			catch (Exception e)
 			{
-				throw;
+				Console.WriteLine("ApplyForCell");
+				Console.WriteLine(e);
 			}
+		}
+#else
+		public void ApplyForCell(TSPlayer player, int tileX, int tileY)
+		{
+			var cell = GetCellByPosition(tileX, tileY);
+			if (cell == null)
+			{
+				player.SendErrorMessage("在选中点位置没有属地.");
+				return;
+			}
+			if (!string.IsNullOrWhiteSpace(cell.Owner) && !player.HasPermission("plotmarker.admin.editall"))
+			{
+				player.SendErrorMessage("该属地已被占用.");
+				return;
+			}
+			cell.Owner = player.Name;
+			cell.GetTime = DateTime.Now;
+
+			if (_database.Query("UPDATE `cells` SET `Owner` = @0 WHERE `cells`.`Position` = @1;",
+				player.User.Name,
+				string.Concat(cell.Parent.Id, ':', cell.Id)) == 1 && UpdateTime(cell, DateTime.Now))
+			{
+				player.SendSuccessMessage("系统已经分配给你一块地.");
+				return;
+			}
+			throw new Exception("No affected rows.");
+		}
+#endif
+
+		public bool AddCellUser(Cell cell, string userName)
+		{
+			try
+			{
+				var mergedIDs = string.Empty;
+				using (
+					var reader = _database.QueryReader("SELECT UserIds FROM Cells WHERE Position = @0",
+													  string.Concat(cell.Parent.Id, ':', cell.Id)))
+				{
+					if (reader.Read())
+						mergedIDs = reader.Get<string>("UserIds");
+				}
+
+				var userIdToAdd = Convert.ToString(TShock.Users.GetUserID(userName));
+				var ids = mergedIDs.Split(',');
+				// Is the user already allowed to the region?
+				if (ids.Contains(userIdToAdd))
+					return true;
+
+				if (string.IsNullOrEmpty(mergedIDs))
+					mergedIDs = userIdToAdd;
+				else
+					mergedIDs = string.Concat(mergedIDs, ",", userIdToAdd);
+
+				var q = _database.Query("UPDATE Cells SET UserIds=@0 WHERE Position = @1",
+					mergedIDs, string.Concat(cell.Parent.Id, ':', cell.Id));
+				cell.SetAllowedIDs(mergedIDs);
+				return q != 0;
+			}
+			catch (Exception ex)
+			{
+				TShock.Log.Error(ex.ToString());
+			}
+			return false;
+		}
+
+		public bool RemoveCellUser(Cell cell, string userName)
+		{
+			if (cell != null)
+			{
+				if (!cell.RemoveID(TShock.Users.GetUserID(userName)))
+				{
+					return false;
+				}
+
+				var ids = string.Join(",", cell.AllowedIDs);
+				return _database.Query("UPDATE Cells SET UserIds=@0 WHERE Position = @1", ids,
+					string.Concat(cell.Parent.Id, ':', cell.Id)) > 0;
+			}
+
+			return false;
+		}
+
+		public bool UpdateTime(Cell cell, DateTime time)
+		{
+			if (_database.Query("UPDATE `cells` SET `GetTime` = @0 WHERE `cells`.`Position` = @1;",
+				time.ToString("s"),
+				string.Concat(cell.Parent.Id, ':', cell.Id)) == 1)
+			{
+				return true;
+			}
+				return false;
+		}
+
+		public Cell GetCellByPosition(int tileX, int tileY)
+		{
+			var plot = PlotMarker.Plots.Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
+			if (plot == null)
+			{
+				return null;
+			}
+			if (plot.IsWall(tileX, tileY))
+			{
+				return null;
+			}
+			var index = plot.FindCell(tileX, tileY);
+			if (index > -1 && index < plot.Cells.Count)
+			{
+				return plot.Cells[index];
+			}
+			return null;
 		}
 
 		public Plot GetPlotByName(string plotname)
@@ -246,7 +408,18 @@ namespace PlotMarker
 			return Plots.FirstOrDefault(p => p.Name == plotname && p.WorldId == Main.worldID.ToString());
 		}
 
-		private static int GetIndex(Plot plot, QueryResult reader)
+		public void FuckCell(Cell cell)
+		{
+			_database.Query("UPDATE `cells` SET `GetTime` = @0, `Owner` = @1, `UserIds` = @2 WHERE `cells`.`Position` = @3;",
+				string.Empty, string.Empty, string.Empty,
+				string.Concat(cell.Parent.Id, ':', cell.Id));
+			cell.Owner = string.Empty;
+			cell.GetTime = default(DateTime);
+			cell.AllowedIDs.Clear();
+			cell.ClearTiles();
+		}
+
+		private static int GetCellIndex(Plot plot, QueryResult reader)
 		{
 			var text = reader.Get<string>("Position");
 			if (string.IsNullOrWhiteSpace(text) || text.Length > 5)
