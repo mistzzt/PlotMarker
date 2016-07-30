@@ -236,13 +236,8 @@ namespace PlotMarker
 
 		public void GetInfo(TSPlayer receiver)
 		{
-			if (Owner != receiver.User.Name && !receiver.HasPermission("plotmarker.admin.editall"))
-			{
-				receiver.SendErrorMessage("你不是该属地的主人.");
-				return;
-			}
-			receiver.SendInfoMessage("领地位置: {{{0}, {1}}} | 领地识别: {{{2}}} | 时间: {3}",
-				X, Y, string.Concat(Parent.Id, ':', Id), GetTime);
+			receiver.SendInfoMessage("领主: {0} | 识别: {{{1}}} | 时间: {2}",
+				string.IsNullOrWhiteSpace(Owner) ? "无" : Owner, string.Concat(Parent.Id, ':', Id), GetTime.ToString("g"));
 		}
 	}
 
