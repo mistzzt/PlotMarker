@@ -30,6 +30,12 @@ namespace PlotMarker
 			set { _y2 = Math.Min(value, Main.maxTilesY - 1); }
 		}
 
+		public Point CellPoint = global::Point.Zero;
+
+		/// <summary>
+		/// 玩家选取点坐标的状态.
+		/// 1/2: 选两点, 3: 选区域, 4: 选点确定自己属地
+		/// </summary>
 		public byte Point = 0;
 
 		/// <summary>

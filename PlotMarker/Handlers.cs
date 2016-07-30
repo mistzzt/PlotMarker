@@ -85,9 +85,10 @@ namespace PlotMarker
 							info.Y2 = y;
 							args.Player.SendInfoMessage("设定点 2 完毕.");
 						}
-						else if (info.Point == 3)
+						else if (info.Point == 4)
 						{
-							args.Player.SendInfoMessage("使用宏伟蓝图(电路设计图)选择区域.");
+							info.CellPoint = new Point(x, y);
+							args.Player.SendInfoMessage("设定临时点坐标完毕.");
 						}
 						info.Point = 0;
 						args.Player.SendTileSquare(x, y, 3);
@@ -143,15 +144,27 @@ namespace PlotMarker
 							{
 								args.Player.SendInfoMessage("你需要选中一个区域.");
 							}
+							else if (data.Point == 4)
+							{
+								data.CellPoint = new Point(startX, startY);
+								args.Player.SendInfoMessage("设定临时点坐标完毕.");
+							}
 						}
 						else
 						{
-							// Set both points at the same time
-							data.X = startX;
-							data.Y = startY;
-							data.X2 = endX;
-							data.Y2 = endY;
-							args.Player.SendInfoMessage("设定区域完毕.");
+							if (data.Point != 4)
+							{
+								// Set both points at the same time
+								data.X = startX;
+								data.Y = startY;
+								data.X2 = endX;
+								data.Y2 = endY;
+								args.Player.SendInfoMessage("设定区域完毕.");
+							}
+							else
+							{
+								args.Player.SendErrorMessage("不支持选中区域作为临时点坐标.");
+							}
 						}
 						data.Point = 0;
 						return true;
