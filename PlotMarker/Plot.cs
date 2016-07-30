@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
 
@@ -64,8 +65,8 @@ namespace PlotMarker
 			var cellY = CellHeight + style.LineWidth;
 			var numX = (Width - style.LineWidth) / cellX;
 			var numY = (Height - style.LineWidth) / cellY;
-			Width = numX*cellX + style.LineWidth;
-			Height = numY*cellY + style.LineWidth;
+			Width = numX * cellX + style.LineWidth;
+			Height = numY * cellY + style.LineWidth;
 
 			//draw horizental line
 			for (var y = 0; y <= numY; y++)
@@ -74,8 +75,8 @@ namespace PlotMarker
 				{
 					for (var t = 0; t < style.LineWidth; t++)
 					{
-						TileHelper.SetTile(X + x, Y + y*cellY + t, style.TileId, style.TilePaint);
-						TileHelper.SetWall(X + x, Y + y*cellY + t, style.WallId, style.WallPaint);
+						TileHelper.SetTile(X + x, Y + y * cellY + t, style.TileId, style.TilePaint);
+						TileHelper.SetWall(X + x, Y + y * cellY + t, style.WallId, style.WallPaint);
 					}
 				}
 			}
@@ -87,8 +88,8 @@ namespace PlotMarker
 				{
 					for (var t = 0; t < style.LineWidth; t++)
 					{
-						TileHelper.SetTile(X + x*cellX + t, Y + y, style.TileId, style.TilePaint);
-						TileHelper.SetWall(X + x*cellX + t, Y + y, style.WallId, style.WallPaint);
+						TileHelper.SetTile(X + x * cellX + t, Y + y, style.TileId, style.TilePaint);
+						TileHelper.SetWall(X + x * cellX + t, Y + y, style.WallId, style.WallPaint);
 					}
 				}
 			}
@@ -104,9 +105,8 @@ namespace PlotMarker
 					{
 						Id = Cells.Count,
 						Parent = this,
-						X = X + x*cellX + style.LineWidth,
-						Y = Y + y*cellY + style.LineWidth,
-						Owner = Owner,
+						X = X + x * cellX + style.LineWidth,
+						Y = Y + y * cellY + style.LineWidth,
 						AllowedIDs = new List<int>()
 					};
 					Cells.Add(cell);
@@ -156,7 +156,7 @@ namespace PlotMarker
 			var cellX = CellWidth + style.LineWidth;
 			var cellY = CellHeight + style.LineWidth;
 
-			return (tileX - X)%cellX < style.LineWidth || (tileY - Y)%cellY < style.LineWidth;
+			return (tileX - X) % cellX < style.LineWidth || (tileY - Y) % cellY < style.LineWidth;
 		}
 	}
 
@@ -189,6 +189,60 @@ namespace PlotMarker
 		public bool Contains(int x, int y)
 		{
 			return X <= x && x < X + Parent.CellWidth && Y <= y && y < Y + Parent.CellHeight;
+		}
+
+		/// <summary>
+		/// Sets the user IDs which are allowed to use the region
+		/// </summary>
+		/// <param name="ids">String of IDs to set</param>
+		public void SetAllowedIDs(string ids)
+		{
+			var idArr = ids.Split(',');
+			var idList = new List<int>();
+
+			foreach (var id in idArr)
+			{
+				int i;
+				if (int.TryParse(id, out i) && i != 0)
+				{
+					idList.Add(i);
+				}
+			}
+
+			AllowedIDs = idList;
+		}
+
+		/// <summary>
+		/// Removes a user's access to the region
+		/// </summary>
+		/// <param name="id">User ID to remove</param>
+		/// <returns>true if the user was found and removed from the region's allowed users</returns>
+		public bool RemoveID(int id)
+		{
+			return AllowedIDs.Remove(id);
+		}
+
+		public void ClearTiles()
+		{
+			for (var i = X; i < X + Parent.CellWidth; i++)
+			{
+				for (var j = Y; j < Y + Parent.CellHeight; j++)
+				{
+					Main.tile[i, j] = new Tile();
+				}
+			}
+			TileHelper.ResetSection(X, Y, Parent.CellWidth, Parent.CellHeight);
+		}
+
+		public void GetInfo(TSPlayer receiver)
+		{
+			if (Owner != receiver.User.Name && !receiver.HasPermission("plotmarker.admin.editall"))
+			{
+				receiver.SendErrorMessage("你不是该属地的主人.");
+				return;
+			}
+			receiver.SendInfoMessage("领地位置: {{{0}, {1}}} | 领地识别: {{{2}}} | 时间: {3}",
+				X, Y, string.Concat(Parent.Id, ':', Id), GetTime);
 		}
 	}
 
