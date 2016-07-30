@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
@@ -57,6 +55,18 @@ namespace PlotMarker
 				AllowServer = false,
 				HelpText = "管理属地."
 			});
+
+			Commands.ChatCommands.Add(new Command("pm.player.getplot", GetPlot, "gp", "分配", "getplot")
+			{
+				AllowServer = false,
+				HelpText = "获取玩家属地."
+			});
+
+			Commands.ChatCommands.Add(new Command("pm.admin.cellmanage", CellManage, "cm", "格子", "cellmanage")
+			{
+				AllowServer = false,
+				HelpText = "管理小片属地."
+			});
 		}
 
 		private static void OnPostInitialize(EventArgs args)
@@ -101,23 +111,22 @@ namespace PlotMarker
 				case "点":
 				case "p":
 				case "point":
-				{
-					if (args.Parameters.Count != 2)
 					{
-						args.Player.SendErrorMessage("语法无效. 正确语法: /pm point <1/2>");
-						return;
-					}
-					byte point;
-					if (!byte.TryParse(args.Parameters[1], out point) || point > 2 || point < 1)
-					{
+						if (args.Parameters.Count != 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /pm point <1/2>");
+							return;
+						}
+						byte point;
+						if (!byte.TryParse(args.Parameters[1], out point) || point > 2 || point < 1)
+						{
 							args.Player.SendErrorMessage("选点无效. 正确: /pm point <1/2>");
 							return;
+						}
+						info.Point = point;
+						args.Player.SendInfoMessage("敲击物块以设定点 {0}", point);
 					}
-					info.Point = point;
-					args.Player.SendInfoMessage("敲击物块以设定点 {0}", point);
-				}
 					break;
-				case "区":
 				case "区域":
 				case "a":
 				case "area":
@@ -131,7 +140,6 @@ namespace PlotMarker
 						args.Player.SendInfoMessage("使用电路设计图选定区域.");
 					}
 					break;
-				case "定":
 				case "定义":
 				case "d":
 				case "define":
@@ -156,10 +164,32 @@ namespace PlotMarker
 						{
 							args.Player.SendSuccessMessage("属地 {0} 已经存在, 请更换属地名后重试.", args.Parameters[1]);
 						}
-						
+
 					}
 					break;
-				case "划":
+				case "删除":
+				case "del":
+					{
+						if (args.Parameters.Count != 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /pm del <区域名>");
+							return;
+						}
+						var name = args.Parameters[1];
+						var plot = Plots.GetPlotByName(name);
+						if (plot == null)
+						{
+							args.Player.SendErrorMessage("未找到属地!");
+							return;
+						}
+						if (Plots.DelPlot(plot))
+						{
+							args.Player.SendSuccessMessage("成功删除属地.");
+							return;
+						}
+						args.Player.SendErrorMessage("删除属地失败!");
+					}
+					break;
 				case "划分":
 				case "m":
 				case "mark":
@@ -194,10 +224,8 @@ namespace PlotMarker
 						plot.Generate(clear);
 					}
 					break;
-				case "查":
 				case "信息":
 				case "i":
-				case "fuck":
 				case "info":
 					{
 						if (args.Parameters.Count != 2)
@@ -219,7 +247,7 @@ namespace PlotMarker
 						}
 						var list = new List<string>
 						{
-							$" * 区域信息: {{{plot.X}, {plot.Y}, {plot.Width}, {plot.Height}}}}}",
+							$" * 区域信息: {{{plot.X}, {plot.Y}, {plot.Width}, {plot.Height}}}",
 							$" * 格子信息: w={plot.CellWidth}, h={plot.CellHeight}, cur={plot.Cells.Count}",
 							$" * 创建者名: {plot.Owner}"
 						};
@@ -233,7 +261,6 @@ namespace PlotMarker
 					}
 					break;
 				case "列表":
-				case "列":
 				case "l":
 				case "list":
 					{
@@ -254,7 +281,6 @@ namespace PlotMarker
 							});
 					}
 					break;
-				case "重":
 				case "重载":
 				case "r":
 				case "reload":
@@ -279,6 +305,7 @@ namespace PlotMarker
 							"point <1/2> - 选中点",
 							"area - 选择区域",
 							"define <属地名> - 定义属地",
+							"del <属地名> - 删除属地",
 							"mark <属地名> - 在属地中生成格子",
 							"info <属地名> - 查看属地属性",
 							"list [页码] - 查看现有的属地",
@@ -298,6 +325,275 @@ namespace PlotMarker
 					{
 						args.Player.SendWarningMessage("子指令无效! 输入 {0} 获取帮助信息.",
 							TShock.Utils.ColorTag("/pm help", Color.Cyan));
+					}
+					break;
+			}
+		}
+
+		private static void GetPlot(CommandArgs args)
+		{
+			if (!args.Player.IsLoggedIn)
+			{
+				args.Player.SendErrorMessage("你未登录, 无法使用属地.");
+				return;
+			}
+
+			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
+			var info = args.Player.GetInfo();
+
+			switch (cmd)
+			{
+				case "point":
+					{
+						if (args.Parameters.Count != 1)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /gm point");
+							return;
+						}
+						info.Point = 4;
+						args.Player.SendInfoMessage("在空白属地内放置任意物块.");
+					}
+					break;
+				case "get":
+					{
+						if (args.Parameters.Count != 1)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /gm get");
+							return;
+						}
+						info.Point = 5;
+						info.OnGetPoint = (x, y, receiver) =>
+						{
+							Plots.ApplyForCell(receiver, x, y);
+						};
+						args.Player.SendInfoMessage("在空白属地内放置任意物块, 来确定你的属地位置.");
+					}
+					break;
+				case "adduser":
+					{
+						if (args.Parameters.Count < 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /gm adduser <玩家名>");
+							return;
+						}
+
+						if (info.CellPoint == Point.Zero)
+						{
+							args.Player.SendErrorMessage("临时点坐标未设定. 使用 /gp point 以设定.");
+							return;
+						}
+
+						var playerName = string.Join(" ", args.Parameters.Skip(1));
+						var cell = Plots.GetCellByPosition(info.CellPoint.X, info.CellPoint.Y);
+
+						if (TShock.Users.GetUserByName(playerName) == null)
+						{
+							args.Player.SendErrorMessage("玩家 " + playerName + " 未找到");
+							return;
+						}
+
+						if (cell != null)
+						{
+							if (cell.Owner != args.Player.User.Name && !args.Player.HasPermission("pm.admin.editall"))
+							{
+								args.Player.SendErrorMessage("你不是该属地的主人.");
+								return;
+							}
+
+							if (Plots.AddCellUser(cell, playerName))
+							{
+								args.Player.SendInfoMessage("添加用户 " + playerName + " 完毕.");
+							}
+							else
+								args.Player.SendErrorMessage("添加用户时出现问题.");
+						}
+						else
+						{
+							args.Player.SendErrorMessage("该点坐标不在属地内.");
+						}
+					}
+					break;
+				case "deluser":
+					{
+						if (args.Parameters.Count < 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /gm deluser <玩家名>");
+							return;
+						}
+						if (info.CellPoint == Point.Zero)
+						{
+							args.Player.SendErrorMessage("临时点坐标未设定. 使用 /gp point 以设定.");
+							return;
+						}
+
+						var playerName = string.Join(" ", args.Parameters.Skip(1));
+						var cell = Plots.GetCellByPosition(info.CellPoint.X, info.CellPoint.Y);
+
+						if (TShock.Users.GetUserByName(playerName) == null)
+						{
+							args.Player.SendErrorMessage("玩家 " + playerName + " 未找到");
+							return;
+						}
+
+						if (cell != null)
+						{
+							if (cell.Owner != args.Player.User.Name && !args.Player.HasPermission("pm.admin.editall"))
+							{
+								args.Player.SendErrorMessage("你不是该属地的主人.");
+								return;
+							}
+
+							if (Plots.RemoveCellUser(cell, playerName))
+							{
+								args.Player.SendInfoMessage("移除用户 " + playerName + " 完毕.");
+							}
+							else
+								args.Player.SendErrorMessage("移除用户时出现问题.");
+						}
+						else
+						{
+							args.Player.SendErrorMessage("该点坐标不在属地内.");
+						}
+					}
+					break;
+				case "info":
+					{
+						if (args.Parameters.Count != 1)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /gm get");
+							return;
+						}
+						info.Point = 5;
+						info.OnGetPoint = (tileX, tileY, player) =>
+						{
+							var cell = Plots.GetCellByPosition(tileX, tileY);
+							if (cell != null)
+							{
+								if (cell.Owner != args.Player.User.Name && !args.Player.HasPermission("pm.admin.editall"))
+								{
+									args.Player.SendErrorMessage("你不是该属地的主人.");
+									return;
+								}
+								cell.GetInfo(player);
+								return;
+							}
+							player.SendErrorMessage("选择点不在属地内.");
+						};
+						args.Player.SendInfoMessage("在你的属地内放置任意物块, 来查看你的属地信息.");
+					}
+					break;
+				case "help":
+					{
+						int pageNumber;
+						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+						{
+							return;
+						}
+						var list = new List<string>
+						{
+							"get - 获取选中点区域",
+							"point - 设置临时点",
+							"adduser <玩家名> - 给自己的属地增加协助者",
+							"deluser <玩家名> - 移除协助者",
+							"info - 查看当前点坐标所在属地的信息",
+							"help [页码] - 获取帮助"
+						};
+						PaginationTools.SendPage(args.Player, pageNumber, list,
+							new PaginationTools.Settings
+							{
+								HeaderFormat = "玩家属地子指令说明 ({0}/{1}):",
+								FooterFormat = "键入 {0}gp help {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
+								NothingToDisplayString = "当前没有说明."
+							});
+					}
+					break;
+				default:
+					{
+						args.Player.SendWarningMessage("子指令无效! 输入 {0} 获取帮助信息.",
+							TShock.Utils.ColorTag("/gp help", Color.Cyan));
+					}
+					break;
+			}
+		}
+
+		private static void CellManage(CommandArgs args)
+		{
+			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
+			var info = args.Player.GetInfo();
+
+			switch (cmd)
+			{
+				case "fuck":
+				case "艹":
+					{
+						if (args.Parameters.Count != 1)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /mp fuck");
+							return;
+						}
+						info.Point = 5;
+						info.OnGetPoint = (tileX, tileY, player) =>
+						{
+							var cell = Plots.GetCellByPosition(tileX, tileY);
+							if (cell != null)
+							{
+								Plots.FuckCell(cell);
+								player.SendSuccessMessage("愉悦, 艹完了.");
+								return;
+							}
+							player.SendErrorMessage("选择点不在属地内.");
+						};
+						args.Player.SendErrorMessage("在属地内放置任意物块, 来艹无聊的东西.");
+					}
+					break;
+				case "info":
+					{
+						if (args.Parameters.Count != 1)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: /gm get");
+							return;
+						}
+						info.Point = 5;
+						info.OnGetPoint = (tileX, tileY, player) =>
+						{
+							var cell = Plots.GetCellByPosition(tileX, tileY);
+							if (cell != null)
+							{
+								cell.GetInfo(player);
+								return;
+							}
+							player.SendErrorMessage("选择点不在属地内.");
+						};
+						args.Player.SendInfoMessage("在属地内放置任意物块, 来查看属地信息.");
+					}
+					break;
+				case "help":
+					{
+						int pageNumber;
+						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+						{
+							return;
+						}
+						var list = new List<string>
+						{
+							"info - 获取选中点区域信息",
+							"fuck - 重置选中点区域",
+							"chown - 更改选中点区域所有者(未完成)",
+							"help [页码] - 获取帮助"
+						};
+						PaginationTools.SendPage(args.Player, pageNumber, list,
+							new PaginationTools.Settings
+							{
+								HeaderFormat = "玩家属地管理子指令说明 ({0}/{1}):",
+								FooterFormat = "键入 {0}cm help {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
+								NothingToDisplayString = "当前没有说明."
+							});
+					}
+					break;
+				default:
+					{
+						args.Player.SendWarningMessage("子指令无效! 输入 {0} 获取帮助信息.",
+							TShock.Utils.ColorTag("/cm help", Color.Cyan));
 					}
 					break;
 			}
