@@ -20,6 +20,8 @@ namespace PlotMarker
 
 		private readonly IDbConnection _database;
 
+		private readonly object _addCellLock = new object();
+
 		public PlotManager(IDbConnection connection)
 		{
 			_database = connection;
@@ -38,7 +40,8 @@ namespace PlotMarker
 			);
 
 			var cellTable = new SqlTable("Cells",
-				new SqlColumn("Position", MySqlDbType.VarChar, 5) { Primary = true, Unique = true },
+				new SqlColumn("Id", MySqlDbType.Int32) { AutoIncrement = true, Primary = true },
+				new SqlColumn("Position", MySqlDbType.VarChar, 5) { Unique = true },
 				new SqlColumn("X", MySqlDbType.Int32),
 				new SqlColumn("Y", MySqlDbType.Int32),
 				new SqlColumn("Owner", MySqlDbType.VarChar, 50),
@@ -93,7 +96,7 @@ namespace PlotMarker
 		public List<Cell> LoadCells(Plot parent)
 		{
 			var list = new List<Cell>();
-			using (var reader = _database.QueryReader("SELECT * FROM `cells` WHERE PlotId = @0 ORDER BY `cells`.`CellId` ASC", parent.Id))
+			using (var reader = _database.QueryReader("SELECT * FROM `cells` WHERE `cells`.`Position` LIKE @0 ORDER BY `cells`.`Id` ASC", string.Concat(parent.Id, ":%")))
 			{
 				while (reader.Read())
 				{
@@ -173,11 +176,11 @@ namespace PlotMarker
 			return false;
 		}
 
-		public async void AddCells(Plot plot)
+		public void AddCells(Plot plot)
 		{
-			_database.Query("DELETE FROM Cells WHERE PlotId = @0", plot.Id);
-			await Task.Run(() =>
+			lock (_addCellLock)
 			{
+				_database.Query("DELETE FROM Cells WHERE Position LIKE @0", plot.Id + ":%");
 				var stopwatch = new Stopwatch();
 				stopwatch.Start();
 				var count = 0;
@@ -187,8 +190,8 @@ namespace PlotMarker
 					count++;
 				}
 				stopwatch.Stop();
-				Console.WriteLine("记录完毕. 共有{0}个. ({1}ms)", count.ToString(), stopwatch.ElapsedMilliseconds);
-			});
+				Console.WriteLine("记录完毕. 共有{0}个. ({1}ms)", count.ToString(), stopwatch.ElapsedMilliseconds.ToString());
+			}
 		}
 
 		public void AddCell(Cell cell)
