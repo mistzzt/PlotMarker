@@ -246,7 +246,7 @@ namespace PlotMarker
 			return Plots.FirstOrDefault(p => p.Name == plotname && p.WorldId == Main.worldID.ToString());
 		}
 
-		private int GetIndex(Plot plot, QueryResult reader)
+		private static int GetIndex(Plot plot, QueryResult reader)
 		{
 			var text = reader.Get<string>("Position");
 			if (string.IsNullOrWhiteSpace(text) || text.Length > 5)
