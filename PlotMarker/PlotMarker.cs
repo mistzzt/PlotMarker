@@ -50,22 +50,22 @@ namespace PlotMarker
 			Config.Write(Configuration.ConfigPath);
 			Plots = new PlotManager(TShock.DB);
 
-			Commands.ChatCommands.Add(new Command("pm.admin.plotmanage", PlotManage, "pm", "属地", "plotmanage")
+			Commands.ChatCommands.Add(new Command("pm.admin.areamanage", AreaManage, "areamanage", "属地区域", "am")
 			{
 				AllowServer = false,
-				HelpText = "管理属地."
+				HelpText = "管理属地区域, 只限管理."
 			});
 
-			Commands.ChatCommands.Add(new Command("pm.player.getplot", GetPlot, "gp", "分配", "getplot")
+			Commands.ChatCommands.Add(new Command("pm.player.getcell", MyPlot, "myplot", "属地", "mp")
 			{
 				AllowServer = false,
-				HelpText = "获取玩家属地."
+				HelpText = "管理玩家自己的属地区域."
 			});
 
-			Commands.ChatCommands.Add(new Command("pm.admin.cellmanage", CellManage, "cm", "格子", "cellmanage")
+			Commands.ChatCommands.Add(new Command("pm.admin.cellmanage", CellManage, "cellmanage", "格子", "cm")
 			{
 				AllowServer = false,
-				HelpText = "管理小片属地."
+				HelpText = "管理玩家属地区域, 只限管理."
 			});
 		}
 
@@ -101,7 +101,7 @@ namespace PlotMarker
 			}
 		}
 
-		private static void PlotManage(CommandArgs args)
+		private static void AreaManage(CommandArgs args)
 		{
 			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
 			var info = args.Player.GetInfo();
@@ -109,18 +109,17 @@ namespace PlotMarker
 			switch (cmd)
 			{
 				case "点":
-				case "p":
 				case "point":
 					{
 						if (args.Parameters.Count != 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm point <1/2>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /am point <1/2>");
 							return;
 						}
 						byte point;
 						if (!byte.TryParse(args.Parameters[1], out point) || point > 2 || point < 1)
 						{
-							args.Player.SendErrorMessage("选点无效. 正确: /pm point <1/2>");
+							args.Player.SendErrorMessage("选点无效. 正确: /am point <1/2>");
 							return;
 						}
 						info.Point = point;
@@ -128,12 +127,11 @@ namespace PlotMarker
 					}
 					break;
 				case "区域":
-				case "a":
 				case "area":
 					{
 						if (args.Parameters.Count != 1)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm area");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /am area");
 							return;
 						}
 						info.Point = 3;
@@ -141,12 +139,11 @@ namespace PlotMarker
 					}
 					break;
 				case "定义":
-				case "d":
 				case "define":
 					{
 						if (args.Parameters.Count != 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm define <区域名>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /am define <区域名>");
 							return;
 						}
 						if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -172,7 +169,7 @@ namespace PlotMarker
 					{
 						if (args.Parameters.Count != 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm del <区域名>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /am del <区域名>");
 							return;
 						}
 						var name = args.Parameters[1];
@@ -191,12 +188,11 @@ namespace PlotMarker
 					}
 					break;
 				case "划分":
-				case "m":
 				case "mark":
 					{
 						if (args.Parameters.Count < 2 || args.Parameters.Count > 3)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm mark <区域名> [Clear:true/false]");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /am mark <区域名> [Clear:true/false]");
 							return;
 						}
 						var name = args.Parameters[1];
@@ -225,12 +221,11 @@ namespace PlotMarker
 					}
 					break;
 				case "信息":
-				case "i":
 				case "info":
 					{
 						if (args.Parameters.Count != 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /pm info <区域名>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: /am info <区域名>");
 							return;
 						}
 						var name = args.Parameters[1];
@@ -248,7 +243,7 @@ namespace PlotMarker
 						var list = new List<string>
 						{
 							$" * 区域信息: {{{plot.X}, {plot.Y}, {plot.Width}, {plot.Height}}}",
-							$" * 格子信息: w={plot.CellWidth}, h={plot.CellHeight}, cur={plot.Cells.Count}",
+							$" * 格子信息: w={plot.CellWidth}, h={plot.CellHeight}, cur={plot.Cells.Count}, used={plot.Cells.Count(c=>!string.IsNullOrWhiteSpace(c.Owner))}",
 							$" * 创建者名: {plot.Owner}"
 						};
 						PaginationTools.SendPage(args.Player, pageNumber, list,
@@ -261,7 +256,6 @@ namespace PlotMarker
 					}
 					break;
 				case "列表":
-				case "l":
 				case "list":
 					{
 						int pageNumber;
@@ -282,7 +276,6 @@ namespace PlotMarker
 					}
 					break;
 				case "重载":
-				case "r":
 				case "reload":
 					{
 						Plots.Reload();
@@ -292,7 +285,6 @@ namespace PlotMarker
 					}
 					break;
 				case "帮助":
-				case "h":
 				case "help":
 					{
 						int pageNumber;
@@ -316,7 +308,7 @@ namespace PlotMarker
 							new PaginationTools.Settings
 							{
 								HeaderFormat = "属地管理子指令说明 ({0}/{1}):",
-								FooterFormat = "键入 {0}pm help {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
+								FooterFormat = "键入 {0}am help {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
 								NothingToDisplayString = "当前没有说明."
 							});
 					}
@@ -324,13 +316,13 @@ namespace PlotMarker
 				default:
 					{
 						args.Player.SendWarningMessage("子指令无效! 输入 {0} 获取帮助信息.",
-							TShock.Utils.ColorTag("/pm help", Color.Cyan));
+							TShock.Utils.ColorTag("/am help", Color.Cyan));
 					}
 					break;
 			}
 		}
 
-		private static void GetPlot(CommandArgs args)
+		private static void MyPlot(CommandArgs args)
 		{
 			if (!args.Player.IsLoggedIn)
 			{
@@ -343,22 +335,24 @@ namespace PlotMarker
 
 			switch (cmd)
 			{
+				case "点":
 				case "point":
 					{
 						if (args.Parameters.Count != 1)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /gm point");
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
 							return;
 						}
 						info.Point = 4;
 						args.Player.SendInfoMessage("在空白属地内放置任意物块.");
 					}
 					break;
+				case "获取":
 				case "get":
 					{
 						if (args.Parameters.Count != 1)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /gm get");
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 获取", Color.Cyan));
 							return;
 						}
 
@@ -377,17 +371,19 @@ namespace PlotMarker
 						args.Player.SendInfoMessage("在空白属地内放置任意物块, 来确定你的属地位置.");
 					}
 					break;
-				case "adduser":
+				case "允许":
+				case "添加":
+				case "allow":
 					{
 						if (args.Parameters.Count < 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /gm adduser <玩家名>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 允许 <玩家名>", Color.Cyan));
 							return;
 						}
 
 						if (info.CellPoint == Point.Zero)
 						{
-							args.Player.SendErrorMessage("临时点坐标未设定. 使用 /gp point 以设定.");
+							args.Player.SendErrorMessage("临时点坐标未设定. 使用 {0} 以设定.", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
 							return;
 						}
 
@@ -421,16 +417,18 @@ namespace PlotMarker
 						}
 					}
 					break;
-				case "deluser":
+				case "禁止":
+				case "删除":
+				case "disallow":
 					{
 						if (args.Parameters.Count < 2)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /gm deluser <玩家名>");
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 禁止 <玩家名>", Color.Cyan));
 							return;
 						}
 						if (info.CellPoint == Point.Zero)
 						{
-							args.Player.SendErrorMessage("临时点坐标未设定. 使用 /gp point 以设定.");
+							args.Player.SendErrorMessage("临时点坐标未设定. 使用 {0} 以设定.", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
 							return;
 						}
 
@@ -464,11 +462,13 @@ namespace PlotMarker
 						}
 					}
 					break;
+				case "信息":
+				case "查询":
 				case "info":
 					{
 						if (args.Parameters.Count != 1)
 						{
-							args.Player.SendErrorMessage("语法无效. 正确语法: /gm get");
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 信息", Color.Cyan));
 							return;
 						}
 						info.Point = 5;
@@ -490,6 +490,7 @@ namespace PlotMarker
 						args.Player.SendInfoMessage("在你的属地内放置任意物块, 来查看你的属地信息.");
 					}
 					break;
+				case "帮助":
 				case "help":
 					{
 						int pageNumber;
@@ -499,18 +500,18 @@ namespace PlotMarker
 						}
 						var list = new List<string>
 						{
-							"get - 获取选中点区域",
-							"point - 设置临时点",
-							"adduser <玩家名> - 给自己的属地增加协助者",
-							"deluser <玩家名> - 移除协助者",
-							"info - 查看当前点坐标所在属地的信息",
-							"help [页码] - 获取帮助"
+							"获取 - 获取选中点区域 (get/获取)",
+							"点 - 设置临时点 (point/获取)",
+							"允许 <玩家名> - 给自己的属地增加协助者 (allow/允许/添加)",
+							"禁止 <玩家名> - 移除协助者 (disallow/禁止/删除)",
+							"信息 - 查看当前点坐标所在属地的信息 (info/信息/查询)",
+							"帮助 [页码] - 获取帮助 (help/帮助)"
 						};
 						PaginationTools.SendPage(args.Player, pageNumber, list,
 							new PaginationTools.Settings
 							{
 								HeaderFormat = "玩家属地子指令说明 ({0}/{1}):",
-								FooterFormat = "键入 {0}gp help {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
+								FooterFormat = "键入 {0}属地 帮助 {{0}} 以获取下一页列表.".SFormat(Commands.Specifier),
 								NothingToDisplayString = "当前没有说明."
 							});
 					}
@@ -518,7 +519,7 @@ namespace PlotMarker
 				default:
 					{
 						args.Player.SendWarningMessage("子指令无效! 输入 {0} 获取帮助信息.",
-							TShock.Utils.ColorTag("/gp help", Color.Cyan));
+							TShock.Utils.ColorTag("/属地 帮助", Color.Cyan));
 					}
 					break;
 			}
