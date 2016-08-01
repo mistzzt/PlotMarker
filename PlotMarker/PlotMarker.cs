@@ -380,15 +380,37 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 允许 <玩家名>", Color.Cyan));
 							return;
 						}
+						Cell cell = null;
 
-						if (info.CellPoint == Point.Zero)
+						var count = Plots.GetTotalCells(args.Player.User.Name);
+						if (count == 0)
 						{
-							args.Player.SendErrorMessage("临时点坐标未设定. 使用 {0} 以设定.", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
+							args.Player.SendErrorMessage("你没有属地!");
 							return;
+						}
+						else if (count == 1)
+						{
+							cell = Plots.GetOnlyCellOfPlayer(args.Player.User.Name);
+							if (cell == null)
+							{
+								args.Player.SendErrorMessage("载入属地失败! (不唯一或缺少)");
+								return;
+							}
+						}
+						else if (count > 1)
+						{
+							if (info.CellPoint == Point.Zero)
+							{
+								args.Player.SendErrorMessage("你有多个属地, 使用 {0} 以选中欲修改的属地.", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
+								return;
+							}
+							else
+							{
+								cell = Plots.GetCellByPosition(info.CellPoint.X, info.CellPoint.Y);
+							}
 						}
 
 						var playerName = string.Join(" ", args.Parameters.Skip(1));
-						var cell = Plots.GetCellByPosition(info.CellPoint.X, info.CellPoint.Y);
 
 						if (TShock.Users.GetUserByName(playerName) == null)
 						{
@@ -426,14 +448,37 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 禁止 <玩家名>", Color.Cyan));
 							return;
 						}
-						if (info.CellPoint == Point.Zero)
+						Cell cell = null;
+
+						var count = Plots.GetTotalCells(args.Player.User.Name);
+						if (count == 0)
 						{
-							args.Player.SendErrorMessage("临时点坐标未设定. 使用 {0} 以设定.", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
+							args.Player.SendErrorMessage("你没有属地!");
 							return;
+						}
+						else if (count == 1)
+						{
+							cell = Plots.GetOnlyCellOfPlayer(args.Player.User.Name);
+							if (cell == null)
+							{
+								args.Player.SendErrorMessage("载入属地失败! (不唯一或缺少)");
+								return;
+							}
+						}
+						else if (count > 1)
+						{
+							if (info.CellPoint == Point.Zero)
+							{
+								args.Player.SendErrorMessage("你有多个属地, 使用 {0} 以选中欲修改的属地.", TShock.Utils.ColorTag("/属地 点", Color.Cyan));
+								return;
+							}
+							else
+							{
+								cell = Plots.GetCellByPosition(info.CellPoint.X, info.CellPoint.Y);
+							}
 						}
 
 						var playerName = string.Join(" ", args.Parameters.Skip(1));
-						var cell = Plots.GetCellByPosition(info.CellPoint.X, info.CellPoint.Y);
 
 						if (TShock.Users.GetUserByName(playerName) == null)
 						{

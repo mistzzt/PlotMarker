@@ -462,5 +462,11 @@ AND `cells`.`Owner` = @1";
 			}
 			return cellId;
 		}
+
+		public Cell GetOnlyCellOfPlayer(string name)
+		{
+			var list = (from plot in Plots from cell in plot.Cells where cell.Owner == name select cell).ToList();
+			return list.Count == 1 ? list[0] : null;
+		}
 	}
 }
