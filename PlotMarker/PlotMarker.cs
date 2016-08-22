@@ -87,6 +87,11 @@ namespace PlotMarker
 
 		private static void OnGetData(GetDataEventArgs args)
 		{
+			if (args.Handled)
+			{
+				return;
+			}
+
 			var type = args.MsgID;
 
 			var player = TShock.Players[args.Msg.whoAmI];
