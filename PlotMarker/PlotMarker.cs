@@ -9,7 +9,7 @@ using TShockAPI;
 
 namespace PlotMarker
 {
-	[ApiVersion(1, 23)]
+	[ApiVersion(1, 24)]
 	public sealed class PlotMarker : TerrariaPlugin
 	{
 		public static readonly string PlotMarkerInfoKey = "pm_info_key";
