@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
+using Microsoft.Xna.Framework;
 
 namespace PlotMarker
 {

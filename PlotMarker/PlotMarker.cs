@@ -6,10 +6,11 @@ using System.Reflection;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
+using Microsoft.Xna.Framework;
 
 namespace PlotMarker
 {
-	[ApiVersion(1, 25)]
+	[ApiVersion(2, 0)]
 	public sealed class PlotMarker : TerrariaPlugin
 	{
 		public static readonly string PlotMarkerInfoKey = "pm_info_key";

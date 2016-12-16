@@ -7,6 +7,7 @@ using Terraria;
 using Terraria.ObjectData;
 using TShockAPI;
 using TShockAPI.DB;
+using Microsoft.Xna.Framework;
 
 namespace PlotMarker
 {

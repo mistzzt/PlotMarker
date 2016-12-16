@@ -1,6 +1,7 @@
 ﻿using System;
 using Terraria;
 using TShockAPI;
+using Microsoft.Xna.Framework;
 
 namespace PlotMarker
 {
@@ -32,7 +33,7 @@ namespace PlotMarker
 			set { _y2 = Math.Min(value, Main.maxTilesY - 1); }
 		}
 
-		public Point CellPoint = global::Point.Zero;
+		public Point CellPoint = Microsoft.Xna.Framework.Point.Zero;
 
 		/// <summary>
 		/// 玩家选取点坐标的状态.
