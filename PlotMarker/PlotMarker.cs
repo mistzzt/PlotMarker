@@ -79,11 +79,11 @@ namespace PlotMarker
 		{
 #if DEBUG
 			var player = TShock.Players[args.Who].NotNull();
+			player.SetData(PlotMarkerInfoKey, new PlayerInfo());
 #else
 			var player = TShock.Players[args.Who];
 			player?.SetData(PlotMarkerInfoKey, new PlayerInfo());
 #endif
-			player.SetData(PlotMarkerInfoKey, new PlayerInfo());
 		}
 
 		private static void OnGetData(GetDataEventArgs args)
@@ -689,7 +689,7 @@ namespace PlotMarker
 				return false;
 			}
 
-			var plot = PlotMarker.Plots.Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
+			var plot = Plots.Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
 			// 若不在属地则不阻拦
 			if (plot == null)
 			{
