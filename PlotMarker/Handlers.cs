@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Streams;
-using System.Linq;
 using Terraria;
 using Terraria.ObjectData;
 using TShockAPI;
-using TShockAPI.DB;
 using Microsoft.Xna.Framework;
 
 namespace PlotMarker
@@ -167,7 +165,7 @@ namespace PlotMarker
 			if (y < 0 || y >= Main.maxTilesY)
 				return true;
 
-			var tileData = TileObjectData.GetTileData(type, style, 0);
+			var tileData = TileObjectData.GetTileData(type, style);
 
 			for (int i = x; i < x + tileData.Width; i++)
 			{

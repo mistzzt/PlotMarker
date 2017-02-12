@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Data;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using Terraria;
 using TShockAPI;
@@ -217,25 +218,25 @@ namespace PlotMarker
 			return false;
 		}
 
-		public void AddCells(Plot plot)
+		public async void AddCells(Plot plot)
 		{
-			lock (_addCellLock)
+			await Task.Run(() =>
 			{
-				_database.Query("DELETE FROM Cells WHERE Position LIKE @0", string.Concat(plot.Id, ":%"));
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
-				var count = 0;
-				foreach (var cell in plot.Cells)
+				lock (_addCellLock)
 				{
-					AddCell(cell);
-					count++;
+					_database.Query("DELETE FROM Cells WHERE Position LIKE @0", string.Concat(plot.Id, ":%"));
+					var stopwatch = new Stopwatch();
+					stopwatch.Start();
+					var count = 0;
+					foreach (var cell in plot.Cells)
+					{
+						AddCell(cell);
+						count++;
+					}
+					stopwatch.Stop();
+					TShock.Log.Info("记录完毕. 共有{0}个. ({1}ms)", count, stopwatch.ElapsedMilliseconds);
 				}
-				stopwatch.Stop();
-				TShock.Log.Info("记录完毕. 共有{0}个. ({1}ms)", count, stopwatch.ElapsedMilliseconds);
-#if DEBUG
-				Console.WriteLine("记录完毕. 共有{0}个. ({1}ms)", count, stopwatch.ElapsedMilliseconds);
-#endif
-			}
+			});
 		}
 
 		public void AddCell(Cell cell)
@@ -339,10 +340,7 @@ namespace PlotMarker
 				if (ids.Contains(userIdToAdd))
 					return true;
 
-				if (string.IsNullOrEmpty(mergedIDs))
-					mergedIDs = userIdToAdd;
-				else
-					mergedIDs = string.Concat(mergedIDs, ",", userIdToAdd);
+				mergedIDs = string.IsNullOrEmpty(mergedIDs) ? userIdToAdd : string.Concat(mergedIDs, ",", userIdToAdd);
 
 				var q = _database.Query("UPDATE Cells SET UserIds=@0 WHERE Position = @1",
 					mergedIDs, string.Concat(cell.Parent.Id, ':', cell.Id));
@@ -360,7 +358,7 @@ namespace PlotMarker
 		{
 			if (cell != null)
 			{
-				if (!cell.RemoveID(TShock.Users.GetUserID(userName)))
+				if (!cell.RemoveId(TShock.Users.GetUserID(userName)))
 				{
 					return false;
 				}
@@ -375,13 +373,9 @@ namespace PlotMarker
 
 		public bool UpdateTime(Cell cell, DateTime time)
 		{
-			if (_database.Query("UPDATE `cells` SET `GetTime` = @0 WHERE `cells`.`Position` = @1;",
-				time.ToString("s"),
-				string.Concat(cell.Parent.Id, ':', cell.Id)) == 1)
-			{
-				return true;
-			}
-				return false;
+			return _database.Query("UPDATE `cells` SET `GetTime` = @0 WHERE `cells`.`Position` = @1;",
+				       time.ToString("s"),
+				       string.Concat(cell.Parent.Id, ':', cell.Id)) == 1;
 		}
 
 		public Cell GetCellByPosition(int tileX, int tileY)

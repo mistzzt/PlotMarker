@@ -77,13 +77,8 @@ namespace PlotMarker
 
 		private static void OnGreet(GreetPlayerEventArgs args)
 		{
-#if DEBUG
-			var player = TShock.Players[args.Who].NotNull();
-			player.SetData(PlotMarkerInfoKey, new PlayerInfo());
-#else
 			var player = TShock.Players[args.Who];
 			player?.SetData(PlotMarkerInfoKey, new PlayerInfo());
-#endif
 		}
 
 		private static void OnGetData(GetDataEventArgs args)
@@ -696,7 +691,7 @@ namespace PlotMarker
 				return false;
 			}
 			// 若在属地, 且是属地主人, 则不阻拦
-			if (plot.Owner == player.Name)
+			if (plot.Owner.Equals(player.Name, StringComparison.Ordinal))
 			{
 				return false;
 			}
@@ -704,26 +699,17 @@ namespace PlotMarker
 			// 若是墙 看有无权限, 无权限直接pass
 			if (plot.IsWall(tileX, tileY))
 			{
-				if (player.HasPermission("pm.build.wall"))
-				{
-					return false;
-				}
-				// 因为墙也算Cell中一部分,所以不能执行检测cell
-				else
-				{
-					return true;
-				}
+				return !player.HasPermission("pm.build.wall");
 			}
 			// 若不是墙, 则考虑在cell的情况
 			var index = plot.FindCell(tileX, tileY);
 			if (index > -1 && index < plot.Cells.Count)
 			{
-				if (plot.Cells[index].Owner == player.Name)
+				if (plot.Cells[index].Owner.Equals(player.Name, StringComparison.Ordinal))
 				{
 					return false;
 				}
-				var na = plot.Cells[index].AllowedIDs?.Contains(player.User.ID);
-				if (na.HasValue && na.Value)
+				if (plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true)
 				{
 					return false;
 				}

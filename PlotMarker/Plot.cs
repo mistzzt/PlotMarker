@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Terraria;
 using TShockAPI;
-using TShockAPI.DB;
 using Microsoft.Xna.Framework;
 
 namespace PlotMarker
@@ -218,7 +214,7 @@ namespace PlotMarker
 		/// </summary>
 		/// <param name="id">User ID to remove</param>
 		/// <returns>true if the user was found and removed from the region's allowed users</returns>
-		public bool RemoveID(int id)
+		public bool RemoveId(int id)
 		{
 			return AllowedIDs.Remove(id);
 		}
