@@ -171,6 +171,8 @@ namespace PlotMarker
 		/// <summary> Cell的起始X坐标 </summary>
 		public int Y { get; set; }
 
+		public Point Center => new Point(X + Parent.CellWidth / 2, Y + Parent.CellHeight / 2);
+
 		/// <summary> 属地的主人 </summary>
 		public string Owner { get; set; }
 

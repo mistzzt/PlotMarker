@@ -372,6 +372,37 @@ namespace PlotMarker
 						args.Player.SendInfoMessage("在空白属地内放置任意物块, 来确定你的属地位置.");
 					}
 					break;
+				case "自动获取":
+				case "autoget":
+					{
+						if (args.Parameters.Count != 1)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/属地 自动获取", Color.Cyan));
+							return;
+						}
+
+						var count = Plots.GetTotalCells(args.Player.User.Name);
+						var max = args.Player.GetMaxCells();
+						if (max != -1 && count >= args.Player.GetMaxCells())
+						{
+							args.Player.SendErrorMessage("你无法获取更多属地. (你当前有{0}个/最多{1}个)", count, max);
+							return;
+						}
+
+						var plot = Plots.Plots.FirstOrDefault(p => p.Contains(args.Player.TileX, args.Player.TileY));
+						if (plot == null)
+						{
+							args.Player.SendMessage("请到建筑区后执行该指令.", Color.Cyan);
+							return;
+						}
+
+						Cell cell;
+						if (Plots.ApplyForCell(args.Player, plot, out cell))
+						{
+							args.Player.Teleport(cell.Center.X * 16, cell.Center.Y * 16);
+						}
+					}
+					break;
 				case "允许":
 				case "添加":
 				case "allow":

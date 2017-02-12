@@ -256,25 +256,16 @@ namespace PlotMarker
 			}
 		}
 
-#if random_pick
-		public void ApplyForCell(TSPlayer player, Plot plot)
+		public bool ApplyForCell(TSPlayer player, Plot plot, out Cell cell)
 		{
 			try
 			{
-				if (plot.Cells.TrueForAll(c => !string.IsNullOrWhiteSpace(c.Owner)))
+				cell = plot.Cells.LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
+				if (cell == null)
 				{
-					player.SendWarningMessage("操作失败. 没有剩余区域了.");
-					return;
+					player.SendWarningMessage("现在没有可用属地了.. 请联系管理.");
+					return false;
 				}
-				Cell cell = null;
-				for (var i = plot.Cells.Count - 1; i >= 0; i--)
-				{
-					if (string.IsNullOrWhiteSpace(plot.Cells[i].Owner))
-					{
-						cell = plot.Cells[i];
-					}
-				}
-				Debug.Assert(cell != null, "cell != null");
 				cell.Owner = player.Name;
 				cell.GetTime = DateTime.Now;
 
@@ -283,17 +274,20 @@ namespace PlotMarker
 					string.Concat(plot.Id, ':', cell.Id)) == 1)
 				{
 					player.SendSuccessMessage("系统已经分配给你一块地.");
-					return;
+					return true;
 				}
 				throw new Exception("No affected rows.");
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				Console.WriteLine("ApplyForCell");
-				Console.WriteLine(e);
+				TShock.Log.Error(ex.ToString());
+				player.SendErrorMessage("系统错误, 获取属地失败. 请联系管理.");
 			}
+
+			cell = null;
+			return false;
 		}
-#else
+
 		public void ApplyForCell(TSPlayer player, int tileX, int tileY)
 		{
 			var cell = GetCellByPosition(tileX, tileY);
@@ -319,7 +313,6 @@ namespace PlotMarker
 			}
 			throw new Exception("No affected rows.");
 		}
-#endif
 
 		public bool AddCellUser(Cell cell, string userName)
 		{
