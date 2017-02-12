@@ -256,37 +256,28 @@ namespace PlotMarker
 			}
 		}
 
-		public bool ApplyForCell(TSPlayer player, Plot plot, out Cell cell)
+		public async void ApplyForCell(TSPlayer player, Plot plot)
 		{
 			try
 			{
-				cell = plot.Cells.LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
+				var cell = plot.Cells.LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
 				if (cell == null)
 				{
-					player.SendWarningMessage("现在没有可用属地了.. 请联系管理.");
-					return false;
+					cell = await GetClearedCell();
+					if (cell == null)
+					{
+						player.SendWarningMessage("现在没有可用属地了.. 请联系管理.");
+						return;
+					}
 				}
-				cell.Owner = player.Name;
-				cell.GetTime = DateTime.Now;
-
-				if (_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
-					player.User.Name,
-					DateTime.Now.ToString("s"),
-					string.Concat(plot.Id, ':', cell.Id)) == 1)
-				{
-					player.SendSuccessMessage("系统已经分配给你一块地.");
-					return true;
-				}
-				throw new Exception("No affected rows.");
+				Apply(player, cell);
+				player.Teleport(cell.Center.X, cell.Center.Y);
 			}
 			catch (Exception ex)
 			{
 				TShock.Log.Error(ex.ToString());
 				player.SendErrorMessage("系统错误, 获取属地失败. 请联系管理.");
 			}
-
-			cell = null;
-			return false;
 		}
 
 		public void ApplyForCell(TSPlayer player, int tileX, int tileY)
@@ -302,18 +293,20 @@ namespace PlotMarker
 				player.SendErrorMessage("该属地已被占用.");
 				return;
 			}
+			Apply(player, cell);
+		}
+
+		private void Apply(TSPlayer player, Cell cell)
+		{
 			cell.Owner = player.Name;
 			cell.GetTime = DateTime.Now;
 
-			if (_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
+			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
 				player.User.Name,
 				DateTime.Now.ToString("s"),
-				string.Concat(cell.Parent.Id, ':', cell.Id)) == 1)
-			{
-				player.SendSuccessMessage("系统已经分配给你一块地.");
-				return;
-			}
-			throw new Exception("No affected rows.");
+				string.Concat(cell.Parent.Id, ':', cell.Id));
+
+			player.SendSuccessMessage("系统已经分配给你一块地.");
 		}
 
 		public bool AddCellUser(Cell cell, string userName)
@@ -380,6 +373,27 @@ namespace PlotMarker
 				{
 					TShock.Log.Error(ex.ToString());
 				}
+			});
+		}
+
+		public async Task<Cell> GetClearedCell()
+		{
+			return await Task.Run(() =>
+			{
+				var cells =
+					from p in Plots
+					from c in p.Cells
+					where (DateTime.Now - c.LastAccess).Days > 2
+					orderby c.LastAccess
+					select c;
+
+				var cell = cells.FirstOrDefault();
+				if (cell == null)
+					return null;
+
+				FuckCell(cell);
+
+				return cell;
 			});
 		}
 

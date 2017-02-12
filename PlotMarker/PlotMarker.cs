@@ -417,11 +417,7 @@ namespace PlotMarker
 							return;
 						}
 
-						Cell cell;
-						if (Plots.ApplyForCell(args.Player, plot, out cell))
-						{
-							args.Player.Teleport(cell.Center.X * 16, cell.Center.Y * 16);
-						}
+						Plots.ApplyForCell(args.Player, plot);
 					}
 					break;
 				case "允许":
