@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Streams;
+using System.Linq;
 using Terraria;
 using Terraria.ObjectData;
 using TShockAPI;
@@ -246,22 +247,11 @@ namespace PlotMarker
 			}
 
 			var points = TShock.Utils.GetMassWireOperationRange(
-			new Point(startX, startY),
-			new Point(endX, endY),
-			args.Player.TPlayer.direction == 1);
-			int x;
-			int y;
-			foreach (var p in points)
-			{
-				x = p.X;
-				y = p.Y;
-				if (PlotMarker.BlockModify(args.Player, x, y))
-				{
-					return true;
-				}
-			}
-
-			return false;
+								new Point(startX, startY),
+								new Point(endX, endY),
+								args.Player.TPlayer.direction == 1
+							);
+			return points.Any(p => PlotMarker.BlockModify(args.Player, p.X, p.Y));
 		}
 	}
 }

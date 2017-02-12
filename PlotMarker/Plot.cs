@@ -34,9 +34,6 @@ namespace PlotMarker
 		/// <summary> 小块区域的高 </summary>
 		public int CellHeight { get; set; }
 
-		/// <summary> 地图Id </summary>
-		public string WorldId { get; set; }
-
 		/// <summary> 整片属地的拥有者 </summary>
 		public string Owner { get; set; }
 
@@ -181,6 +178,8 @@ namespace PlotMarker
 		/// 用于判定过期 
 		/// </summary>
 		public DateTime GetTime { get; set; }
+
+		public DateTime LastAccess { get; set; }
 
 		/// <summary> 有权限动属地者 </summary>
 		public List<int> AllowedIDs { get; set; }

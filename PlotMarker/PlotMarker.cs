@@ -30,6 +30,7 @@ namespace PlotMarker
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.NetGetData.Register(this, OnGetData, 1000);
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
+			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
 			ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
 		}
 
@@ -40,9 +41,23 @@ namespace PlotMarker
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.NetGetData.Deregister(this, OnGetData);
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
+				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
 				ServerApi.Hooks.GamePostInitialize.Deregister(this, OnPostInitialize);
 			}
 			base.Dispose(disposing);
+		}
+
+		private static void OnLeave(LeaveEventArgs args)
+		{
+			var name = TShock.Players[args.Who]?.Name;
+			if (string.IsNullOrWhiteSpace(name))
+				return;
+
+			var cells = Plots.GetCellsOfPlayer(name);
+			foreach (var c in cells)
+			{
+				Plots.UpdateLastAccess(c);
+			}
 		}
 
 		private static void OnInitialize(EventArgs e)
@@ -763,12 +778,10 @@ namespace PlotMarker
 			var index = plot.FindCell(tileX, tileY);
 			if (index > -1 && index < plot.Cells.Count)
 			{
-				if (plot.Cells[index].Owner.Equals(player.Name, StringComparison.Ordinal))
+				if (plot.Cells[index].Owner.Equals(player.Name, StringComparison.Ordinal)
+					|| plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true)
 				{
-					return false;
-				}
-				if (plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true)
-				{
+					plot.Cells[index].LastAccess = DateTime.Now;
 					return false;
 				}
 			}

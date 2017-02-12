@@ -43,7 +43,8 @@ namespace PlotMarker
 				new SqlColumn("Y", MySqlDbType.Int32),
 				new SqlColumn("Owner", MySqlDbType.VarChar, 50),
 				new SqlColumn("UserIds", MySqlDbType.Text),
-				new SqlColumn("GetTime", MySqlDbType.Text)
+				new SqlColumn("GetTime", MySqlDbType.Text),
+				new SqlColumn("LastAccess", MySqlDbType.Text)
 			);
 
 			var creator = new SqlTableCreator(_database,
@@ -81,7 +82,6 @@ namespace PlotMarker
 						Height = reader.Get<int>("Height"),
 						CellWidth = reader.Get<int>("CellWidth"),
 						CellHeight = reader.Get<int>("CellHeight"),
-						WorldId = Main.worldID.ToString(),
 						Owner = reader.Get<string>("Owner"),
 					};
 					plot.Cells = LoadCells(plot);
@@ -107,6 +107,7 @@ namespace PlotMarker
 						Y = reader.Get<int>("Y"),
 						Owner = reader.Get<string>("Owner"),
 						GetTime = DateTime.TryParse(reader.Get<string>("GetTime"), out dt) ? dt : default(DateTime),
+						LastAccess = DateTime.TryParse(reader.Get<string>("LastAccess"), out dt) ? dt : default(DateTime),
 						AllowedIDs = new List<int>()
 					};
 					var mergedids = reader.Get<string>("UserIds") ?? "";
@@ -171,7 +172,6 @@ namespace PlotMarker
 							Height = height,
 							CellHeight = style.CellHeight,
 							CellWidth = style.CellWidth,
-							WorldId = worldid,
 							Owner = owner
 						});
 
@@ -244,8 +244,8 @@ namespace PlotMarker
 			try
 			{
 				if (_database.Query(
-					"INSERT INTO Cells (Position, X, Y, UserIds, Owner, GetTime) VALUES (@0, @1, @2, @3, @4, @5);",
-					string.Concat(cell.Parent.Id, ':', cell.Id), cell.X, cell.Y, string.Empty, string.Empty, string.Empty) == 1)
+					"INSERT INTO Cells (Position, X, Y, UserIds, Owner, GetTime, LastAccess) VALUES (@0, @1, @2, @3, @4, @5, @6);",
+					string.Concat(cell.Parent.Id, ':', cell.Id), cell.X, cell.Y, string.Empty, string.Empty, string.Empty, string.Empty) == 1)
 					return;
 				throw new Exception("No affected rows.");
 			}
@@ -269,8 +269,9 @@ namespace PlotMarker
 				cell.Owner = player.Name;
 				cell.GetTime = DateTime.Now;
 
-				if (_database.Query("UPDATE `cells` SET `Owner` = @0 WHERE `cells`.`Position` = @1;",
+				if (_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
 					player.User.Name,
+					DateTime.Now.ToString("s"),
 					string.Concat(plot.Id, ':', cell.Id)) == 1)
 				{
 					player.SendSuccessMessage("系统已经分配给你一块地.");
@@ -304,9 +305,10 @@ namespace PlotMarker
 			cell.Owner = player.Name;
 			cell.GetTime = DateTime.Now;
 
-			if (_database.Query("UPDATE `cells` SET `Owner` = @0 WHERE `cells`.`Position` = @1;",
+			if (_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
 				player.User.Name,
-				string.Concat(cell.Parent.Id, ':', cell.Id)) == 1 && UpdateTime(cell, DateTime.Now))
+				DateTime.Now.ToString("s"),
+				string.Concat(cell.Parent.Id, ':', cell.Id)) == 1)
 			{
 				player.SendSuccessMessage("系统已经分配给你一块地.");
 				return;
@@ -364,11 +366,21 @@ namespace PlotMarker
 			return false;
 		}
 
-		public bool UpdateTime(Cell cell, DateTime time)
+		public async void UpdateLastAccess(Cell cell)
 		{
-			return _database.Query("UPDATE `cells` SET `GetTime` = @0 WHERE `cells`.`Position` = @1;",
-				       time.ToString("s"),
-				       string.Concat(cell.Parent.Id, ':', cell.Id)) == 1;
+			await Task.Run(() =>
+			{
+				try
+				{
+					_database.Query("UPDATE Cells SET LastAccess=@0 WHERE Position=@1",
+						cell.LastAccess.ToString("s"),
+						string.Concat(cell.Parent.Id, ":", cell.Id));
+				}
+				catch (Exception ex)
+				{
+					TShock.Log.Error(ex.ToString());
+				}
+			});
 		}
 
 		public Cell GetCellByPosition(int tileX, int tileY)
@@ -392,16 +404,17 @@ namespace PlotMarker
 
 		public Plot GetPlotByName(string plotname)
 		{
-			return Plots.FirstOrDefault(p => p.Name == plotname && p.WorldId == Main.worldID.ToString());
+			return Plots.FirstOrDefault(p => p.Name == plotname);
 		}
 
 		public void FuckCell(Cell cell)
 		{
-			_database.Query("UPDATE `cells` SET `GetTime` = @0, `Owner` = @1, `UserIds` = @2 WHERE `cells`.`Position` = @3;",
-				string.Empty, string.Empty, string.Empty,
+			_database.Query("UPDATE `cells` SET `GetTime` = @0, `Owner` = @1, `UserIds` = @2, `LastAccess` = @3 WHERE `cells`.`Position` = @4;",
+				string.Empty, string.Empty, string.Empty, string.Empty,
 				string.Concat(cell.Parent.Id, ':', cell.Id));
 			cell.Owner = string.Empty;
 			cell.GetTime = default(DateTime);
+			cell.LastAccess = default(DateTime);
 			cell.AllowedIDs.Clear();
 			cell.ClearTiles();
 		}
@@ -452,11 +465,15 @@ AND `cells`.`Owner` = @1";
 
 		public Cell GetOnlyCellOfPlayer(string name)
 		{
+			return GetCellsOfPlayer(name).SingleOrDefault();
+		}
+
+		public Cell[] GetCellsOfPlayer(string name)
+		{
 			return (from plot in Plots
-					from cell in plot.Cells
-					where cell.Owner.Equals(name, StringComparison.Ordinal)
-					select cell)
-						.SingleOrDefault();
+				from cell in plot.Cells
+				where cell.Owner.Equals(name, StringComparison.Ordinal)
+				select cell).ToArray();
 		}
 	}
 }
