@@ -68,6 +68,12 @@ namespace PlotMarker
 				AllowServer = false,
 				HelpText = "管理玩家属地区域, 只限管理."
 			});
+
+			Commands.ChatCommands.Add(new Command("pm.player.return", ReturnCell, "mycell", "返回属地")
+			{
+				AllowServer = false,
+				HelpText = "返回到玩家属地."
+			});
 		}
 
 		private static void OnPostInitialize(EventArgs args)
@@ -578,7 +584,8 @@ namespace PlotMarker
 						var list = new List<string>
 						{
 							"获取 - 获取选中点区域 (get/获取)",
-							"点 - 设置临时点 (point/获取)",
+							"自动获取 - 自动获取区域 (autoget/自动获取)",
+							"点 - 设置临时点 (point/点)",
 							"允许 <玩家名> - 给自己的属地增加协助者 (allow/允许/添加)",
 							"禁止 <玩家名> - 移除协助者 (disallow/禁止/删除)",
 							"信息 - 查看当前点坐标所在属地的信息 (info/信息/查询)",
@@ -682,6 +689,26 @@ namespace PlotMarker
 							TShock.Utils.ColorTag("/cm help", Color.Cyan));
 					}
 					break;
+			}
+		}
+
+		private static void ReturnCell(CommandArgs args)
+		{
+			var count = Plots.GetTotalCells(args.Player.User.Name);
+			if (count == 1)
+			{
+				var cell = Plots.GetOnlyCellOfPlayer(args.Player.Name);
+				if (args.Player.Teleport(cell.Center.X * 16, cell.Center.Y * 16))
+					args.Player.SendSuccessMessage("已经传送到你的属地.");
+
+			}
+			else if (count > 1)
+			{
+				args.Player.SendErrorMessage("你当前有多个属地.");
+			}
+			else if (count <= 0)
+			{
+				args.Player.SendErrorMessage("你目前没有属地.");
 			}
 		}
 
