@@ -15,7 +15,7 @@ namespace PlotMarker
 	{
 		public static readonly string PlotMarkerInfoKey = "pm_info_key";
 
-		public override string Name => "PlotMarker";
+		public override string Name => GetType().Name;
 		public override string Author => "MR.H";
 		public override string Description => "Marks plots for players and manages them.";
 		public override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
