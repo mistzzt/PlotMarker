@@ -271,7 +271,7 @@ namespace PlotMarker
 					}
 				}
 				Apply(player, cell);
-				player.Teleport(cell.Center.X, cell.Center.Y);
+				player.Teleport(cell.Center.X * 16, cell.Center.Y * 16);
 			}
 			catch (Exception ex)
 			{
