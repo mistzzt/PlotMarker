@@ -234,8 +234,8 @@ namespace PlotMarker
 
 		public void GetInfo(TSPlayer receiver)
 		{
-			receiver.SendInfoMessage("领主: {0} | 识别: {{{1}}} | 时间: {2}",
-				string.IsNullOrWhiteSpace(Owner) ? "无" : Owner, string.Concat(Parent.Id, ':', Id), GetTime.ToString("g"));
+			receiver.SendInfoMessage("属地 {0} - 领主: {1} | 创建: {2} | 修改: {3}",
+				Id, string.IsNullOrWhiteSpace(Owner) ? "无" : Owner, GetTime.ToString("g"), LastAccess.ToString("g"));
 		}
 	}
 
