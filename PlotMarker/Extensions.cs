@@ -10,7 +10,7 @@ namespace PlotMarker
 		{
 			if (obj == null)
 			{
-				throw new Exception($"类型为{typeof(T).FullName}对象不应为Null.");
+				throw new ArgumentNullException(nameof(obj), $"类型为{typeof(T).FullName}对象不应为Null.");
 			}
 
 			return obj;
@@ -37,14 +37,13 @@ namespace PlotMarker
 			{
 				return -1;
 			}
-			for (var i = 0; i < player.Group.permissions.Count; i++)
+			foreach (var perm in player.Group.permissions)
 			{
-				var perm = player.Group.permissions[i];
 				var match = Regex.Match(perm, @"^pm\.cell\.(\d{1,9})$");
 				if (match.Success)
 					return int.Parse(match.Groups[1].Value);
 			}
-			return 1;
+			return 1; // 默认一个
 		}
 	}
 }

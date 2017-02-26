@@ -399,7 +399,7 @@ namespace PlotMarker
 
 		public Cell GetCellByPosition(int tileX, int tileY)
 		{
-			var plot = PlotMarker.Plots.Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
+			var plot = Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
 			if (plot == null)
 			{
 				return null;

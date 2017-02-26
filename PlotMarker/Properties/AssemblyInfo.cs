@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MR.H")]
 [assembly: AssemblyProduct("PlotMarker")]
-[assembly: AssemblyCopyright("Copyright © MR.H 2016")]
+[assembly: AssemblyCopyright("Copyright © MR.H 2017")]
 [assembly: AssemblyTrademark("MistZZT")]
 [assembly: AssemblyCulture("zh-CN")]
 
@@ -14,5 +14,5 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("ab3a4852-0345-492c-9cbe-9db3fbc147f8")]
 
-[assembly: AssemblyVersion("0.15.0.0")]
-[assembly: AssemblyFileVersion("0.15.0.0")]
+[assembly: AssemblyVersion("0.16.0.0")]
+[assembly: AssemblyFileVersion("0.16.0.0")]

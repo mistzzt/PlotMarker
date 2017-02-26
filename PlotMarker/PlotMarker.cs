@@ -630,6 +630,11 @@ namespace PlotMarker
 				case "fuck":
 				case "艹":
 					{
+						if (!args.Player.HasPermission("pm.admin.fuckcell"))
+						{
+							args.Player.SendErrorMessage("无权限执行.");
+							return;
+						}
 						if (args.Parameters.Count != 1)
 						{
 							args.Player.SendErrorMessage("语法无效. 正确语法: /mp fuck");
@@ -741,41 +746,26 @@ namespace PlotMarker
 
 		private static bool BlockModify_Inner(TSPlayer player, int tileX, int tileY)
 		{
-			// 没登录玩家不允许操作(防止未登录的同名玩家修改)
 			if (!player.IsLoggedIn)
 			{
 				return true;
 			}
 
-			// 有权限玩家不阻拦
-			if (player.HasPermission("pm.build.everywhere"))
-			{
-				return false;
-			}
-
 			var plot = Plots.Plots.FirstOrDefault(p => p.Contains(tileX, tileY));
-			// 若不在属地则不阻拦
 			if (plot == null)
 			{
 				return false;
 			}
-			// 若在属地, 且是属地主人, 则不阻拦
-			if (plot.Owner.Equals(player.Name, StringComparison.Ordinal))
-			{
-				return false;
-			}
-			// 因为墙壁的一部分算在格子内部, 所以应该先检测是否为墙
-			// 若是墙 看有无权限, 无权限直接pass
 			if (plot.IsWall(tileX, tileY))
 			{
 				return !player.HasPermission("pm.build.wall");
 			}
-			// 若不是墙, 则考虑在cell的情况
 			var index = plot.FindCell(tileX, tileY);
 			if (index > -1 && index < plot.Cells.Count)
 			{
 				if (plot.Cells[index].Owner.Equals(player.Name, StringComparison.Ordinal)
-					|| plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true)
+					|| plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true
+					|| player.HasPermission("pm.build.everywhere"))
 				{
 					plot.Cells[index].LastAccess = DateTime.Now;
 					return false;
