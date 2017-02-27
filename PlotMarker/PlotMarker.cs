@@ -756,7 +756,7 @@ namespace PlotMarker
 			var index = plot.FindCell(tileX, tileY);
 			if (index > -1 && index < plot.Cells.Count)
 			{
-				if (plot.Cells[index].Owner.Equals(player.Name, StringComparison.Ordinal)
+				if (string.Equals(plot.Cells[index].Owner, player.Name, StringComparison.Ordinal)
 					|| plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true
 					|| player.HasPermission("pm.build.everywhere"))
 				{
