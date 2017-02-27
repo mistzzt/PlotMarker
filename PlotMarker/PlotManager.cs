@@ -256,11 +256,11 @@ namespace PlotMarker
 			}
 		}
 
-		public async void ApplyForCell(TSPlayer player, Plot plot)
+		public async void ApplyForCell(TSPlayer player)
 		{
 			try
 			{
-				var cell = plot.Cells.LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
+				var cell = (from plot in Plots from c in plot.Cells select c).LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
 				if (cell == null)
 				{
 					cell = await GetClearedCell();
@@ -383,7 +383,7 @@ namespace PlotMarker
 				var cells =
 					from p in Plots
 					from c in p.Cells
-					where (DateTime.Now - c.LastAccess).Days > 2
+					where (DateTime.Now - c.LastAccess).Days > 4
 					orderby c.LastAccess
 					select c;
 

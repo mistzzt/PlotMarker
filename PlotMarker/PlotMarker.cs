@@ -410,14 +410,7 @@ namespace PlotMarker
 							return;
 						}
 
-						var plot = Plots.Plots.FirstOrDefault(p => p.Contains(args.Player.TileX, args.Player.TileY));
-						if (plot == null)
-						{
-							args.Player.SendMessage("请到建筑区后执行该指令.", Color.Cyan);
-							return;
-						}
-
-						Plots.ApplyForCell(args.Player, plot);
+						Plots.ApplyForCell(args.Player);
 					}
 					break;
 				case "允许":
