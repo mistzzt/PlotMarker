@@ -19,7 +19,8 @@ namespace PlotMarker
 				{ PacketTypes.PaintWall, HandlePaintWall },
 				{ PacketTypes.Tile, HandleTile },
 				{ PacketTypes.PlaceObject, HandlePlaceObject },
-				{ PacketTypes.MassWireOperation, HandleMassWireOperation }
+				{ PacketTypes.MassWireOperation, HandleMassWireOperation },
+				{ PacketTypes.LiquidSet, HandleLiquidSet }
 			};
 
 		public static bool HandleGetData(PacketTypes type, TSPlayer player, MemoryStream data)
@@ -252,6 +253,20 @@ namespace PlotMarker
 								args.Player.TPlayer.direction == 1
 							);
 			return points.Any(p => PlotMarker.BlockModify(args.Player, p.X, p.Y));
+		}
+
+		private static bool HandleLiquidSet(GetDataHandlerArgs args)
+		{
+			int tileX = args.Data.ReadInt16();
+			int tileY = args.Data.ReadInt16();
+
+			if (PlotMarker.BlockModify(args.Player, tileX, tileY))
+			{
+				args.Player.SendTileSquare(tileX, tileY, 4);
+				return true;
+			}
+
+			return false;
 		}
 	}
 }
