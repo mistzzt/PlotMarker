@@ -25,8 +25,7 @@ namespace PlotMarker
 
 		public static bool HandleGetData(PacketTypes type, TSPlayer player, MemoryStream data)
 		{
-			GetDataHandlerDelegate handler;
-			if (GetDataHandlerDelegates.TryGetValue(type, out handler))
+			if (GetDataHandlerDelegates.TryGetValue(type, out var handler))
 			{
 				try
 				{
@@ -103,39 +102,34 @@ namespace PlotMarker
 
 		private static bool HandleTile(GetDataHandlerArgs args)
 		{
-			var info = args.Player.GetInfo();
+			var info = PlayerInfo.GetInfo(args.Player);
 			using (var reader = new BinaryReader(args.Data))
 			{
 				reader.ReadByte();
 				int x = reader.ReadInt16();
 				int y = reader.ReadInt16();
 
-				if (info.Point != 0)
+				if (info.Status != PlayerInfo.PointStatus.None)
 				{
 					if (x >= 0 && y >= 0 && x < Main.maxTilesX && y < Main.maxTilesY)
 					{
-						if (info.Point == 1)
+						switch (info.Status)
 						{
-							info.X = x;
-							info.Y = y;
-							args.Player.SendInfoMessage("设定点 1 完毕.");
+							case PlayerInfo.PointStatus.Point1:
+								info.X = x;
+								info.Y = y;
+								args.Player.SendInfoMessage("设定点 1 完毕.");
+								break;
+							case PlayerInfo.PointStatus.Point2:
+								info.X2 = x;
+								info.Y2 = y;
+								args.Player.SendInfoMessage("设定点 2 完毕.");
+								break;
+							case PlayerInfo.PointStatus.Delegate:
+								info.OnGetPoint?.Invoke(x, y, args.Player);
+								break;
 						}
-						else if (info.Point == 2)
-						{
-							info.X2 = x;
-							info.Y2 = y;
-							args.Player.SendInfoMessage("设定点 2 完毕.");
-						}
-						else if (info.Point == 4)
-						{
-							info.CellPoint = new Point(x, y);
-							args.Player.SendInfoMessage("设定临时点坐标完毕.");
-						}
-						else if (info.Point == 5)
-						{
-							info.OnGetPoint?.Invoke(x, y, args.Player);
-						}
-						info.Point = 0;
+						info.Status = PlayerInfo.PointStatus.None;
 						args.Player.SendTileSquare(x, y, 3);
 						return true;
 					}
@@ -192,57 +186,49 @@ namespace PlotMarker
 			var endY = args.Data.ReadInt16();
 			args.Data.ReadByte(); // Ignore toolmode
 
-			var data = args.Player.GetInfo();
-			if (data.Point != 0)
+			var data = PlayerInfo.GetInfo(args.Player);
+			if (data.Status != PlayerInfo.PointStatus.None)
 			{
 				if (startX >= 0 && startY >= 0 && endX >= 0 && endY >= 0 && startX < Main.maxTilesX && startY < Main.maxTilesY && endX < Main.maxTilesX && endY < Main.maxTilesY)
 				{
 					if (startX == endX && startY == endY)
 					{
-						// Set a single point
-						if (data.Point == 1)
+						switch (data.Status)
 						{
-							data.X = startX;
-							data.Y = startY;
-							args.Player.SendInfoMessage("设定点 1 完毕.");
-						}
-						else if (data.Point == 2)
-						{
-							data.X2 = startX;
-							data.Y2 = startY;
-							args.Player.SendInfoMessage("设定点 2 完毕.");
-						}
-						else if (data.Point == 3)
-						{
-							args.Player.SendInfoMessage("你需要选中一个区域.");
-						}
-						else if (data.Point == 4)
-						{
-							data.CellPoint = new Point(startX, startY);
-							args.Player.SendInfoMessage("设定临时点坐标完毕.");
-						}
-						else if (data.Point == 5)
-						{
-							data.OnGetPoint?.Invoke(startX, startY, args.Player);
+							case PlayerInfo.PointStatus.Point1:
+								data.X = startX;
+								data.Y = startY;
+								args.Player.SendInfoMessage("设定点 1 完毕.");
+								break;
+							case PlayerInfo.PointStatus.Point2:
+								data.X2 = startX;
+								data.Y2 = startY;
+								args.Player.SendInfoMessage("设定点 2 完毕.");
+								break;
+							case PlayerInfo.PointStatus.Delegate:
+								data.OnGetPoint?.Invoke(startX, startY, args.Player);
+								break;
 						}
 					}
 					else
 					{
-						if (data.Point != 4)
+						switch (data.Status)
 						{
-							// Set both points at the same time
-							data.X = startX;
-							data.Y = startY;
-							data.X2 = endX;
-							data.Y2 = endY;
-							args.Player.SendInfoMessage("设定区域完毕.");
-						}
-						else
-						{
-							args.Player.SendErrorMessage("不支持选中区域作为临时点坐标.");
+							case PlayerInfo.PointStatus.Point1:
+							case PlayerInfo.PointStatus.Point2:
+								data.X = startX;
+								data.Y = startY;
+								data.X2 = endX;
+								data.Y2 = endY;
+								args.Player.SendInfoMessage("设定区域完毕.");
+								break;
+							case PlayerInfo.PointStatus.Delegate:
+								data.OnGetPoint?.Invoke(startX, startY, args.Player);
+								break;
+
 						}
 					}
-					data.Point = 0;
+					data.Status = PlayerInfo.PointStatus.None;
 					return true;
 				}
 			}

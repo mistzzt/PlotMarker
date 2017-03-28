@@ -8,6 +8,22 @@ namespace PlotMarker
 	internal delegate void GetPoint(int tileX, int tileY, TSPlayer receiver);
 	internal class PlayerInfo
 	{
+		private const string Key = "pm_info_key";
+
+		public static PlayerInfo GetInfo(TSPlayer player)
+		{
+			if (player == null)
+				return null;
+
+			var info = player.GetData<PlayerInfo>(Key);
+			if (info == null)
+			{
+				info = new PlayerInfo();
+				player.SetData(Key, info);
+			}
+			return info;
+		}
+
 		private int _x = -1;
 		private int _x2 = -1;
 		private int _y = -1;
@@ -33,13 +49,11 @@ namespace PlotMarker
 			set { _y2 = Math.Min(value, Main.maxTilesY - 1); }
 		}
 
-		public Point CellPoint = Microsoft.Xna.Framework.Point.Zero;
-
 		/// <summary>
 		/// 玩家选取点坐标的状态.
 		/// 1/2: 选两点, 3: 选区域, 4: 选点确定自己属地/更改状态, 5: 触发事件
 		/// </summary>
-		public byte Point = 0;
+		public PointStatus Status = 0;
 
 		public GetPoint OnGetPoint;
 
@@ -47,5 +61,13 @@ namespace PlotMarker
 		/// Permission to build message cool down.
 		/// </summary>
 		public long BPm = 1;
+
+		public enum PointStatus : byte
+		{
+			None,
+			Point1,
+			Point2,
+			Delegate
+		}
 	}
 }

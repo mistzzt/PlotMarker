@@ -16,17 +16,6 @@ namespace PlotMarker
 			return obj;
 		}
 
-		public static PlayerInfo GetInfo(this TSPlayer player)
-		{
-			var info = player.GetData<PlayerInfo>(PlotMarker.PlotMarkerInfoKey);
-			if (info == null)
-			{
-				info = new PlayerInfo();
-				player.SetData(PlotMarker.PlotMarkerInfoKey, info);
-			}
-			return info;
-		}
-
 		public static int GetMaxCells(this TSPlayer player)
 		{
 			if (!player.IsLoggedIn)
