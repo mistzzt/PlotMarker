@@ -136,14 +136,14 @@ namespace PlotMarker
 							args.Player.SendErrorMessage("语法无效. 正确语法: /am point <1/2>");
 							return;
 						}
-						
+
 						if (!byte.TryParse(args.Parameters[1], out var point) || point > 2 || point < 1)
 						{
 							args.Player.SendErrorMessage("选点无效. 正确: /am point <1/2>");
 							return;
 						}
 
-						info.Status = (PlayerInfo.PointStatus) point;
+						info.Status = (PlayerInfo.PointStatus)point;
 						args.Player.SendInfoMessage("敲击物块以设定点 {0}", point);
 					}
 					break;

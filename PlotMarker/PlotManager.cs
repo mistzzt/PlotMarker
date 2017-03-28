@@ -485,9 +485,9 @@ AND `cells`.`Owner` = @1";
 		public Cell[] GetCellsOfPlayer(string name)
 		{
 			return (from plot in Plots
-				from cell in plot.Cells
-				where cell.Owner.Equals(name, StringComparison.Ordinal)
-				select cell).ToArray();
+					from cell in plot.Cells
+					where cell.Owner.Equals(name, StringComparison.Ordinal)
+					select cell).ToArray();
 		}
 	}
 }

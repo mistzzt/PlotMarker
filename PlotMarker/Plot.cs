@@ -41,7 +41,7 @@ namespace PlotMarker
 		/// 小块区域的引用. 其中数组索引就是 <see cref="Cell.Id"/> ,
 		/// 而顺序(数组索引)是按照 <see cref="Plot.GenerateCells"/> 中添加列表的顺序来
 		/// </summary>
-		public List<Cell> Cells { get; set; } = new List<Cell>();
+		public List<Cell> Cells { get; internal set; } = new List<Cell>();
 
 		/// <summary>
 		/// 生成格子并记录格子数值到数据库.
