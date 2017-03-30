@@ -624,6 +624,49 @@ namespace PlotMarker
 						}
 					}
 					break;
+				case "chown":
+					{
+						if (args.Parameters.Count < 2)
+						{
+							args.Player.SendErrorMessage("语法无效. 正确语法: {0}", TShock.Utils.ColorTag("/cm chown <账户名>", Color.Cyan));
+							return;
+						}
+
+						info.Status = PlayerInfo.PointStatus.Delegate;
+						info.OnGetPoint = InternalChownWithPoint;
+						args.Player.SendInfoMessage("在你的属地内放置物块来移除用户.");
+
+						void InternalChownWithPoint(int x, int y, TSPlayer receiver) => InternalChown(args.Parameters, receiver, Plots.GetCellByPosition(x, y));
+
+						void InternalChown(IEnumerable<string> parameters, TSPlayer player, Cell target)
+						{
+							var playerName = string.Join(" ", parameters.Skip(1));
+							var user = TShock.Users.GetUserByName(playerName);
+
+							if (user == null)
+							{
+								player.SendErrorMessage("用户 " + playerName + " 未找到");
+								return;
+							}
+
+							if (target != null)
+							{
+								if (target.Owner != player.User.Name && !player.HasPermission("pm.admin.editall"))
+								{
+									player.SendErrorMessage("你不是该属地的主人.");
+									return;
+								}
+
+								Plots.ChangeOwner(target, user);
+								player.SendSuccessMessage("完成更换主人.");
+							}
+							else
+							{
+								player.SendErrorMessage("该点坐标不在属地内.");
+							}
+						}
+					}
+					break;
 				case "help":
 					{
 						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out var pageNumber))

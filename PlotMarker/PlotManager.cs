@@ -489,5 +489,16 @@ AND `cells`.`Owner` = @1";
 					where cell.Owner.Equals(name, StringComparison.Ordinal)
 					select cell).ToArray();
 		}
+
+		public void ChangeOwner(Cell cell, User user)
+		{
+			cell.Owner = user.Name;
+			cell.GetTime = DateTime.Now;
+
+			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
+				user.Name,
+				cell.GetTime.ToString("s"),
+				string.Concat(cell.Parent.Id, ':', cell.Id));
+		}
 	}
 }
