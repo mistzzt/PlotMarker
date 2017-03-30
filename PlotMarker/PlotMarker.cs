@@ -527,8 +527,9 @@ namespace PlotMarker
 			void InternalSetUser(IEnumerable<string> parameters, TSPlayer player, Cell target, bool allow)
 			{
 				var playerName = string.Join(" ", parameters.Skip(1));
+				var user = TShock.Users.GetUserByName(playerName);
 
-				if (TShock.Users.GetUserByName(playerName) == null)
+				if (user == null)
 				{
 					player.SendErrorMessage("玩家 " + playerName + " 未找到");
 					return;
@@ -544,14 +545,14 @@ namespace PlotMarker
 
 					if (allow)
 					{
-						if (Plots.AddCellUser(target, playerName))
+						if (Plots.AddCellUser(target, user))
 							player.SendInfoMessage("添加用户 " + playerName + " 完毕.");
 						else
 							player.SendErrorMessage("添加用户时出现问题.");
 					}
 					else
 					{
-						if (Plots.RemoveCellUser(target, playerName))
+						if (Plots.RemoveCellUser(target, user))
 							player.SendInfoMessage("移除用户 " + playerName + " 完毕.");
 						else
 							player.SendErrorMessage("移除用户时出现问题.");

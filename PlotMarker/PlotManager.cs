@@ -309,7 +309,7 @@ namespace PlotMarker
 			player.SendSuccessMessage("系统已经分配给你一块地.");
 		}
 
-		public bool AddCellUser(Cell cell, string userName)
+		public bool AddCellUser(Cell cell, User user)
 		{
 			try
 			{
@@ -322,13 +322,13 @@ namespace PlotMarker
 						mergedIDs = reader.Get<string>("UserIds");
 				}
 
-				var userIdToAdd = Convert.ToString(TShock.Users.GetUserID(userName));
 				var ids = mergedIDs.Split(',');
-				// Is the user already allowed to the region?
-				if (ids.Contains(userIdToAdd))
+				var userId = user.ID.ToString();
+
+				if (ids.Contains(userId))
 					return true;
 
-				mergedIDs = string.IsNullOrEmpty(mergedIDs) ? userIdToAdd : string.Concat(mergedIDs, ",", userIdToAdd);
+				mergedIDs = string.IsNullOrEmpty(mergedIDs) ? userId : string.Concat(mergedIDs, ",", userId);
 
 				var q = _database.Query("UPDATE Cells SET UserIds=@0 WHERE Position = @1",
 					mergedIDs, string.Concat(cell.Parent.Id, ':', cell.Id));
@@ -342,11 +342,11 @@ namespace PlotMarker
 			return false;
 		}
 
-		public bool RemoveCellUser(Cell cell, string userName)
+		public bool RemoveCellUser(Cell cell, User user)
 		{
 			if (cell != null)
 			{
-				if (!cell.RemoveId(TShock.Users.GetUserID(userName)))
+				if (!cell.RemoveId(user.ID))
 				{
 					return false;
 				}
