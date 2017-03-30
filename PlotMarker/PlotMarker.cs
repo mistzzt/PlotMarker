@@ -635,7 +635,7 @@ namespace PlotMarker
 
 						info.Status = PlayerInfo.PointStatus.Delegate;
 						info.OnGetPoint = InternalChownWithPoint;
-						args.Player.SendInfoMessage("在你的属地内放置物块来移除用户.");
+						args.Player.SendInfoMessage("在你的属地内放置物块来更换领主.");
 
 						void InternalChownWithPoint(int x, int y, TSPlayer receiver) => InternalChown(args.Parameters, receiver, Plots.GetCellByPosition(x, y));
 
