@@ -30,33 +30,33 @@ namespace PlotMarker
 
 		public int X
 		{
-			get { return _x; }
-			set { _x = Math.Max(0, value); }
+			get => _x;
+			set => _x = Math.Max(0, value);
 		}
 
 		public int X2
 		{
-			get { return _x2; }
-			set { _x2 = Math.Min(value, Main.maxTilesX - 1); }
+			get => _x2;
+			set => _x2 = Math.Min(value, Main.maxTilesX - 1);
 		}
 
 		public int Y
 		{
-			get { return _y; }
-			set { _y = Math.Max(0, value); }
+			get => _y;
+			set => _y = Math.Max(0, value);
 		}
 
 		public int Y2
 		{
-			get { return _y2; }
-			set { _y2 = Math.Min(value, Main.maxTilesY - 1); }
+			get => _y2;
+			set => _y2 = Math.Min(value, Main.maxTilesY - 1);
 		}
 
 		/// <summary>
 		/// 玩家选取点坐标的状态.
 		/// 1/2: 选两点, 3: 选区域, 4: 选点确定自己属地/更改状态, 5: 触发事件
 		/// </summary>
-		public PointStatus Status = 0;
+		public PointStatus Status = PointStatus.None;
 
 		public GetPoint OnGetPoint;
 
@@ -67,7 +67,7 @@ namespace PlotMarker
 
 		public enum PointStatus : byte
 		{
-			None,
+			None = 0,
 			Point1,
 			Point2,
 			Delegate

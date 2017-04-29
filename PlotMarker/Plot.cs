@@ -109,9 +109,9 @@ namespace PlotMarker
 			PlotMarker.Plots.AddCells(this);
 		}
 
-		public async void Generate(bool clear = true)
+		public void Generate(bool clear = true)
 		{
-			await Task.Run(() => GenerateCells(clear));
+			Task.Run(() => GenerateCells(clear));
 		}
 
 		public bool Contains(int x, int y)
@@ -127,9 +127,9 @@ namespace PlotMarker
 		/// <returns><see cref="Cells"/>索引</returns>
 		public int FindCell(int tileX, int tileY)
 		{
-			if (!new Rectangle(X, Y, Width, Height).Contains(tileX, tileY))
+			if (!Contains(tileX, tileY))
 			{
-				throw new ArgumentException("物块坐标必须在本属地内部!");
+				throw new ArgumentOutOfRangeException(nameof(tileX), "物块坐标必须在本属地内部!");
 			}
 			var style = PlotMarker.Config.PlotStyle;
 			var cellX = CellWidth + style.LineWidth;

@@ -38,6 +38,7 @@ namespace PlotMarker
 
 			var cellTable = new SqlTable("Cells",
 				new SqlColumn("Id", MySqlDbType.Int32) { AutoIncrement = true, Primary = true },
+				// todo: 使用双unique键取代Position
 				new SqlColumn("Position", MySqlDbType.VarChar, 5) { Unique = true },
 				new SqlColumn("X", MySqlDbType.Int32),
 				new SqlColumn("Y", MySqlDbType.Int32),
@@ -52,16 +53,8 @@ namespace PlotMarker
 												  ? (IQueryBuilder)new SqliteQueryCreator()
 												  : new MysqlQueryCreator());
 
-			try
-			{
-				creator.EnsureTableStructure(plotTable);
-				creator.EnsureTableStructure(cellTable);
-			}
-			catch (Exception ex)
-			{
-				Debugger.Break();
-				TShock.Log.Error(ex.ToString());
-			}
+			creator.EnsureTableStructure(plotTable);
+			creator.EnsureTableStructure(cellTable);
 		}
 
 		public void Reload()
@@ -112,24 +105,12 @@ namespace PlotMarker
 					};
 					var mergedids = reader.Get<string>("UserIds") ?? "";
 					var splitids = mergedids.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-					try
+					foreach (var t in splitids)
 					{
-						for (var i = 0; i < splitids.Length; i++)
-						{
-							int userid;
-
-							if (int.TryParse(splitids[i], out userid)) // if unparsable, it's not an int, so silently skip
-								cell.AllowedIDs.Add(userid);
-							else
-								TShock.Log.Warn("UserIDs 有一列不可用数据: " + splitids[i]);
-						}
-					}
-					catch (Exception e)
-					{
-						TShock.Log.Error("数据库中含有无效的用户ID. (UserIDs 数据类型是整数).");
-						TShock.Log.Error("很多操作会受到影响. 你必须手动删除这些数据并修复.");
-						TShock.Log.Error(e.ToString());
-						TShock.Log.Error(e.StackTrace);
+						if (int.TryParse(t, out int userid))
+							cell.AllowedIDs.Add(userid);
+						else
+							TShock.Log.Warn("UserIDs 有一列不可用数据: " + t);
 					}
 					list.Add(cell);
 				}
@@ -186,12 +167,10 @@ namespace PlotMarker
 				{
 					return false;
 				}
-				Debugger.Break();
 				TShock.Log.Error(ex.ToString());
 			}
 			catch (Exception ex)
 			{
-				Debugger.Break();
 				TShock.Log.Error(ex.ToString());
 			}
 			return false;
@@ -218,9 +197,9 @@ namespace PlotMarker
 			return false;
 		}
 
-		public async void AddCells(Plot plot)
+		public void AddCells(Plot plot)
 		{
-			await Task.Run(() =>
+			Task.Run(() =>
 			{
 				lock (_addCellLock)
 				{
@@ -359,9 +338,9 @@ namespace PlotMarker
 			return false;
 		}
 
-		public async void UpdateLastAccess(Cell cell)
+		public void UpdateLastAccess(Cell cell)
 		{
-			await Task.Run(() =>
+			Task.Run(() =>
 			{
 				try
 				{
@@ -418,7 +397,7 @@ namespace PlotMarker
 
 		public Plot GetPlotByName(string plotname)
 		{
-			return Plots.FirstOrDefault(p => p.Name == plotname);
+			return Plots.FirstOrDefault(p => p.Name.Equals(plotname, StringComparison.Ordinal));
 		}
 
 		public void FuckCell(Cell cell)
@@ -458,15 +437,13 @@ AND `cells`.`Owner` = @1";
 			}
 			var args = text.Split(':');
 #if DEBUG
-			int test;
-			if (args.Any(a => a == null) || args.Length != 2 || args.Any(a => !int.TryParse(a, out test)))
+			if (args.Any(a => a == null) || args.Length != 2 || args.Any(a => !int.TryParse(a, out int test)))
 			{
 				Debugger.Break();
 				throw new Exception("fuck you, wrong data(string[])");
 			}
 #endif
-			int plotId, cellId;
-			if (!int.TryParse(args[0], out plotId) || !int.TryParse(args[1], out cellId))
+			if (!int.TryParse(args[0], out int plotId) || !int.TryParse(args[1], out int cellId))
 			{
 				throw new Exception("fuck you, wrong data(int.Parse)");
 			}

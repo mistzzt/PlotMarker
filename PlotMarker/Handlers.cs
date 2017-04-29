@@ -46,9 +46,8 @@ namespace PlotMarker
 			args.Data.ReadByte();
 			int tileX = args.Data.ReadInt16();
 			int tileY = args.Data.ReadInt16();
-			args.Data.ReadInt16(); // Ignore style
 
-			if (!TShock.Utils.TilePlacementValid(tileX, tileY) || (args.Player.Dead && TShock.Config.PreventDeadModification))
+			if (!TShock.Utils.TilePlacementValid(tileX, tileY) || args.Player.Dead && TShock.Config.PreventDeadModification)
 				return true;
 
 			if (PlotMarker.BlockModify(args.Player, tileX, tileY))
