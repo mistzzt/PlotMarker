@@ -295,8 +295,7 @@ namespace PlotMarker
 				case "帮助":
 				case "help":
 					{
-						int pageNumber;
-						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+						if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out int pageNumber))
 						{
 							return;
 						}
