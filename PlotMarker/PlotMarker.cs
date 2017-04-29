@@ -10,7 +10,7 @@ using Microsoft.Xna.Framework;
 
 namespace PlotMarker
 {
-	[ApiVersion(2, 0)]
+	[ApiVersion(2, 1)]
 	public sealed class PlotMarker : TerrariaPlugin
 	{
 		public override string Name => GetType().Name;

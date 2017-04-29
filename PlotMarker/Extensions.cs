@@ -26,13 +26,12 @@ namespace PlotMarker
 			{
 				return -1;
 			}
-			foreach (var perm in player.Group.permissions)
+			for (byte index = 20; index > 0; index++)
 			{
-				var match = Regex.Match(perm, @"^pm\.cell\.(\d{1,9})$");
-				if (match.Success)
-					return int.Parse(match.Groups[1].Value);
+				if (player.HasPermission("pm.cell." + index))
+					return index;
 			}
-			return 1; // 默认一个
+			return PlotMarker.Config.DefaultCellPerPlayer;
 		}
 	}
 }

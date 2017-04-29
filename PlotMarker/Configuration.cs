@@ -22,6 +22,9 @@ namespace PlotMarker
 				WallPaint = 21
 			};
 
+		[JsonProperty("默认玩家最大属地数")]
+		public byte DefaultCellPerPlayer = 1;
+
 		public static Configuration Read(string path)
 		{
 			if (!File.Exists(path))
