@@ -37,7 +37,6 @@ namespace PlotMarker
 			);
 
 			var cellTable = new SqlTable("Cells",
-				// todo: 使用双unique键取代Position
 				new SqlColumn("PlotId", MySqlDbType.Int32) { Unique = true },
 				new SqlColumn("CellId", MySqlDbType.Int32) { Unique = true },
 				new SqlColumn("X", MySqlDbType.Int32),
@@ -231,7 +230,9 @@ namespace PlotMarker
 		{
 			try
 			{
-				var cell = (from plot in Plots from c in plot.Cells select c).LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
+				var cell = Plots
+								.SelectMany(plot => plot.Cells)
+								.LastOrDefault(c => string.IsNullOrWhiteSpace(c.Owner));
 				if (cell == null)
 				{
 					cell = await GetClearedCell();
