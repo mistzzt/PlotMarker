@@ -252,7 +252,7 @@ namespace PlotMarker
 						var list = new List<string>
 						{
 							$" * 区域信息: {{{plot.X}, {plot.Y}, {plot.Width}, {plot.Height}}}",
-							$" * 格子信息: w={plot.CellWidth}, h={plot.CellHeight}, cur={plot.Cells.Count}, used={plot.Cells.Count(c=>!string.IsNullOrWhiteSpace(c.Owner))}",
+							$" * 格子信息: w={plot.CellWidth}, h={plot.CellHeight}, cur={plot.Cells.Length}, used={plot.Cells.Count(c=>!string.IsNullOrWhiteSpace(c.Owner))}",
 							$" * 创建者名: {plot.Owner}"
 						};
 						PaginationTools.SendPage(args.Player, pageNumber, list,
@@ -751,7 +751,7 @@ namespace PlotMarker
 				return !player.HasPermission("pm.build.wall");
 			}
 			var index = plot.FindCell(tileX, tileY);
-			if (index > -1 && index < plot.Cells.Count)
+			if (index > -1 && index < plot.Cells.Length)
 			{
 				if (string.Equals(plot.Cells[index].Owner, player.Name, StringComparison.Ordinal)
 					|| plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true

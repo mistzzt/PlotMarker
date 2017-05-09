@@ -41,7 +41,7 @@ namespace PlotMarker
 		/// 小块区域的引用. 其中数组索引就是 <see cref="Cell.Id"/> ,
 		/// 而顺序(数组索引)是按照 <see cref="Plot.GenerateCells"/> 中添加列表的顺序来
 		/// </summary>
-		public List<Cell> Cells { get; internal set; } = new List<Cell>();
+		public Cell[] Cells { get; internal set; }
 
 		/// <summary>
 		/// 生成格子并记录格子数值到数据库.
@@ -90,22 +90,23 @@ namespace PlotMarker
 
 			TileHelper.ResetSection(X, Y, Width, Height);
 
-			Cells.Clear();
+			var cells = new List<Cell>();
 			for (var x = 0; x < numX; x++)
 			{
 				for (var y = 0; y < numY; y++)
 				{
 					var cell = new Cell
 					{
-						Id = Cells.Count,
+						Id = cells.Count,
 						Parent = this,
 						X = X + x * cellX + style.LineWidth,
 						Y = Y + y * cellY + style.LineWidth,
 						AllowedIDs = new List<int>()
 					};
-					Cells.Add(cell);
+					cells.Add(cell);
 				}
 			}
+			Cells = cells.ToArray();
 			PlotMarker.Plots.AddCells(this);
 		}
 

@@ -37,9 +37,9 @@ namespace PlotMarker
 			);
 
 			var cellTable = new SqlTable("Cells",
-				new SqlColumn("Id", MySqlDbType.Int32) { AutoIncrement = true, Primary = true },
 				// todo: 使用双unique键取代Position
-				new SqlColumn("Position", MySqlDbType.VarChar, 5) { Unique = true },
+				new SqlColumn("PlotId", MySqlDbType.Int32) { Unique = true },
+				new SqlColumn("CellId", MySqlDbType.Int32) { Unique = true },
 				new SqlColumn("X", MySqlDbType.Int32),
 				new SqlColumn("Y", MySqlDbType.Int32),
 				new SqlColumn("Owner", MySqlDbType.VarChar, 50),
@@ -83,23 +83,22 @@ namespace PlotMarker
 			}
 		}
 
-		public List<Cell> LoadCells(Plot parent)
+		public Cell[] LoadCells(Plot parent)
 		{
 			var list = new List<Cell>();
-			using (var reader = _database.QueryReader("SELECT * FROM `cells` WHERE `cells`.`Position` LIKE @0 ORDER BY `cells`.`Id` ASC",
-				string.Concat(parent.Id, ":%")))
+			using (var reader = _database.QueryReader("SELECT * FROM `cells` WHERE `cells`.`PlotId` = @0 ORDER BY `cells`.`CellId` ASC",
+				parent.Id))
 			{
 				while (reader.Read())
 				{
-					DateTime dt;
 					var cell = new Cell
 					{
 						Parent = parent,
-						Id = GetCellIndex(parent, reader),
+						Id = reader.Get<int>("CellId"),
 						X = reader.Get<int>("X"),
 						Y = reader.Get<int>("Y"),
 						Owner = reader.Get<string>("Owner"),
-						GetTime = DateTime.TryParse(reader.Get<string>("GetTime"), out dt) ? dt : default(DateTime),
+						GetTime = DateTime.TryParse(reader.Get<string>("GetTime"), out DateTime dt) ? dt : default(DateTime),
 						LastAccess = DateTime.TryParse(reader.Get<string>("LastAccess"), out dt) ? dt : default(DateTime),
 						AllowedIDs = new List<int>()
 					};
@@ -114,15 +113,8 @@ namespace PlotMarker
 					}
 					list.Add(cell);
 				}
-#if DEBUG
-				for (var i = 0; i < list.Count; i++)
-				{
-					if (list[i].Id != i)
-						Debugger.Break();
-				}
-#endif
 			}
-			return list;
+			return list.ToArray();
 		}
 
 		public bool AddPlot(int x, int y, int width, int height, string name, string owner, string worldid, Style style)
@@ -185,7 +177,7 @@ namespace PlotMarker
 			try
 			{
 				Plots.Remove(plot);
-				_database.Query("DELETE FROM Cells WHERE Position LIKE @0", string.Concat(plot.Id, ":%"));
+				_database.Query("DELETE FROM Cells WHERE PlotId=@0", plot.Id);
 				_database.Query("DELETE FROM Plots WHERE Id = @0", plot.Id);
 				return true;
 			}
@@ -203,7 +195,7 @@ namespace PlotMarker
 			{
 				lock (_addCellLock)
 				{
-					_database.Query("DELETE FROM Cells WHERE Position LIKE @0", string.Concat(plot.Id, ":%"));
+					_database.Query("DELETE FROM Cells WHERE PlotId=@0", plot.Id);
 					var stopwatch = new Stopwatch();
 					stopwatch.Start();
 					var count = 0;
@@ -223,8 +215,8 @@ namespace PlotMarker
 			try
 			{
 				if (_database.Query(
-					"INSERT INTO Cells (Position, X, Y, UserIds, Owner, GetTime, LastAccess) VALUES (@0, @1, @2, @3, @4, @5, @6);",
-					string.Concat(cell.Parent.Id, ':', cell.Id), cell.X, cell.Y, string.Empty, string.Empty, string.Empty, string.Empty) == 1)
+					"INSERT INTO Cells (PlotId, CellId, X, Y, UserIds, Owner, GetTime, LastAccess) VALUES (@0, @1, @2, @3, @4, @5, @6, @7);",
+					cell.Parent.Id, cell.Id, cell.X, cell.Y, string.Empty, string.Empty, string.Empty, string.Empty) == 1)
 					return;
 				throw new Exception("No affected rows.");
 			}
@@ -280,10 +272,11 @@ namespace PlotMarker
 			cell.Owner = player.Name;
 			cell.GetTime = DateTime.Now;
 
-			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
+			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`CellId` = @2 AND `cells`.`PlotId` = @3;",
 				player.User.Name,
 				DateTime.Now.ToString("s"),
-				string.Concat(cell.Parent.Id, ':', cell.Id));
+				cell.Id,
+				cell.Parent.Id);
 
 			player.SendSuccessMessage("系统已经分配给你一块地.");
 		}
@@ -294,8 +287,8 @@ namespace PlotMarker
 			{
 				var mergedIDs = string.Empty;
 				using (
-					var reader = _database.QueryReader("SELECT UserIds FROM Cells WHERE Position = @0",
-													  string.Concat(cell.Parent.Id, ':', cell.Id)))
+					var reader = _database.QueryReader("SELECT UserIds FROM Cells WHERE PlotId=@0 AND CellId=@1",
+													  cell.Parent.Id, cell.Id))
 				{
 					if (reader.Read())
 						mergedIDs = reader.Get<string>("UserIds");
@@ -309,8 +302,8 @@ namespace PlotMarker
 
 				mergedIDs = string.IsNullOrEmpty(mergedIDs) ? userId : string.Concat(mergedIDs, ",", userId);
 
-				var q = _database.Query("UPDATE Cells SET UserIds=@0 WHERE Position = @1",
-					mergedIDs, string.Concat(cell.Parent.Id, ':', cell.Id));
+				var q = _database.Query("UPDATE Cells SET UserIds=@0 WHERE PlotId=@1 AND CellId=@2",
+					mergedIDs, cell.Parent.Id, cell.Id);
 				cell.SetAllowedIDs(mergedIDs);
 				return q != 0;
 			}
@@ -331,8 +324,8 @@ namespace PlotMarker
 				}
 
 				var ids = string.Join(",", cell.AllowedIDs);
-				return _database.Query("UPDATE Cells SET UserIds=@0 WHERE Position = @1", ids,
-					string.Concat(cell.Parent.Id, ':', cell.Id)) > 0;
+				return _database.Query("UPDATE Cells SET UserIds=@0 WHERE WHERE PlotId=@1 AND CellId=@2", ids,
+					cell.Parent.Id, cell.Id) > 0;
 			}
 
 			return false;
@@ -344,9 +337,10 @@ namespace PlotMarker
 			{
 				try
 				{
-					_database.Query("UPDATE Cells SET LastAccess=@0 WHERE Position=@1",
+					_database.Query("UPDATE Cells SET LastAccess=@0 WHERE PlotId=@1 AND CellId=@2",
 						cell.LastAccess.ToString("s"),
-						string.Concat(cell.Parent.Id, ":", cell.Id));
+						cell.Parent.Id,
+						cell.Id);
 				}
 				catch (Exception ex)
 				{
@@ -388,7 +382,7 @@ namespace PlotMarker
 				return null;
 			}
 			var index = plot.FindCell(tileX, tileY);
-			if (index > -1 && index < plot.Cells.Count)
+			if (index > -1 && index < plot.Cells.Length)
 			{
 				return plot.Cells[index];
 			}
@@ -402,9 +396,10 @@ namespace PlotMarker
 
 		public void FuckCell(Cell cell)
 		{
-			_database.Query("UPDATE `cells` SET `GetTime` = @0, `Owner` = @1, `UserIds` = @2, `LastAccess` = @3 WHERE `cells`.`Position` = @4;",
+			_database.Query("UPDATE `cells` SET `GetTime` = @0, `Owner` = @1, `UserIds` = @2, `LastAccess` = @3 WHERE `cells`.`PlotId` = @4 AND `cells`.`CellId` = @5;",
 				string.Empty, string.Empty, string.Empty, string.Empty,
-				string.Concat(cell.Parent.Id, ':', cell.Id));
+				cell.Parent.Id,
+				cell.Id);
 			cell.Owner = string.Empty;
 			cell.GetTime = default(DateTime);
 			cell.LastAccess = default(DateTime);
@@ -416,7 +411,7 @@ namespace PlotMarker
 		{
 			const string query = @"SELECT COUNT(*) FROM `cells`, `plots`
 WHERE `plots`.`WorldId` = @0
-AND `cells`.`Position` LIKE CONCAT(`plots`.`Id`, ':%')
+AND `cells`.`PlotId` = `plots`.`Id`
 AND `cells`.`Owner` = @1";
 			using (var reader = _database.QueryReader(query, Main.worldID.ToString(), playerName))
 			{
@@ -426,32 +421,6 @@ AND `cells`.`Owner` = @1";
 				}
 			}
 			throw new Exception("数据库错误");
-		}
-
-		private static int GetCellIndex(Plot plot, QueryResult reader)
-		{
-			var text = reader.Get<string>("Position");
-			if (string.IsNullOrWhiteSpace(text) || text.Length > 5)
-			{
-				throw new Exception($"属地 {plot.Name} 区域某一位置数据无效.");
-			}
-			var args = text.Split(':');
-#if DEBUG
-			if (args.Any(a => a == null) || args.Length != 2 || args.Any(a => !int.TryParse(a, out int test)))
-			{
-				Debugger.Break();
-				throw new Exception("fuck you, wrong data(string[])");
-			}
-#endif
-			if (!int.TryParse(args[0], out int plotId) || !int.TryParse(args[1], out int cellId))
-			{
-				throw new Exception("fuck you, wrong data(int.Parse)");
-			}
-			if (plot.Id != plotId)
-			{
-				throw new Exception("fuck you, wrong data(plot.Id != plotId)");
-			}
-			return cellId;
 		}
 
 		public Cell GetOnlyCellOfPlayer(string name)
@@ -472,10 +441,11 @@ AND `cells`.`Owner` = @1";
 			cell.Owner = user.Name;
 			cell.GetTime = DateTime.Now;
 
-			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`Position` = @2;",
+			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`PlotId` = @2 AND `cells`.`CellId` = @3;",
 				user.Name,
 				cell.GetTime.ToString("s"),
-				string.Concat(cell.Parent.Id, ':', cell.Id));
+				cell.Parent.Id,
+				cell.Id);
 		}
 	}
 }
