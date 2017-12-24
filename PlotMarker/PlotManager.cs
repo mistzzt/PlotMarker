@@ -274,7 +274,7 @@ namespace PlotMarker
 			cell.GetTime = DateTime.Now;
 
 			_database.Query("UPDATE `cells` SET `Owner` = @0, `GetTime` = @1 WHERE `cells`.`CellId` = @2 AND `cells`.`PlotId` = @3;",
-				player.User.Name,
+				player.Account.Name,
 				DateTime.Now.ToString("s"),
 				cell.Id,
 				cell.Parent.Id);
@@ -282,7 +282,7 @@ namespace PlotMarker
 			player.SendSuccessMessage("系统已经分配给你一块地.");
 		}
 
-		public bool AddCellUser(Cell cell, User user)
+		public bool AddCellUser(Cell cell, UserAccount user)
 		{
 			try
 			{
@@ -315,7 +315,7 @@ namespace PlotMarker
 			return false;
 		}
 
-		public bool RemoveCellUser(Cell cell, User user)
+		public bool RemoveCellUser(Cell cell, UserAccount user)
 		{
 			if (cell != null)
 			{
@@ -437,7 +437,7 @@ AND `cells`.`Owner` = @1";
 					select cell).ToArray();
 		}
 
-		public void ChangeOwner(Cell cell, User user)
+		public void ChangeOwner(Cell cell, UserAccount user)
 		{
 			cell.Owner = user.Name;
 			cell.GetTime = DateTime.Now;

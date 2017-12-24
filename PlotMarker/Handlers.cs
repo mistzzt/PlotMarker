@@ -14,7 +14,6 @@ namespace PlotMarker
 	{
 		private static readonly Dictionary<PacketTypes, GetDataHandlerDelegate> GetDataHandlerDelegates
 			= new Dictionary<PacketTypes, GetDataHandlerDelegate> {
-				{ PacketTypes.TileKill, HandleTileKill },
 				{ PacketTypes.PaintTile, HandlePaintTile },
 				{ PacketTypes.PaintWall, HandlePaintWall },
 				{ PacketTypes.Tile, HandleTile },
@@ -38,24 +37,6 @@ namespace PlotMarker
 					return true;
 				}
 			}
-			return false;
-		}
-
-		private static bool HandleTileKill(GetDataHandlerArgs args)
-		{
-			args.Data.ReadByte();
-			int tileX = args.Data.ReadInt16();
-			int tileY = args.Data.ReadInt16();
-
-			if (!TShock.Utils.TilePlacementValid(tileX, tileY) || args.Player.Dead && TShock.Config.PreventDeadModification)
-				return true;
-
-			if (PlotMarker.BlockModify(args.Player, tileX, tileY))
-			{
-				args.Player.SendTileSquare(tileX, tileY, 3);
-				return true;
-			}
-
 			return false;
 		}
 

@@ -350,7 +350,7 @@ namespace PlotMarker
 							return;
 						}
 
-						var count = Plots.GetTotalCells(args.Player.User.Name);
+						var count = Plots.GetTotalCells(args.Player.Account.Name);
 						var max = args.Player.GetMaxCells();
 						if (max != -1 && count >= args.Player.GetMaxCells())
 						{
@@ -373,7 +373,7 @@ namespace PlotMarker
 							return;
 						}
 
-						var count = Plots.GetTotalCells(args.Player.User.Name);
+						var count = Plots.GetTotalCells(args.Player.Account.Name);
 						var max = args.Player.GetMaxCells();
 						if (max != -1 && count >= args.Player.GetMaxCells())
 						{
@@ -394,14 +394,14 @@ namespace PlotMarker
 							return;
 						}
 
-						var count = Plots.GetTotalCells(args.Player.User.Name);
+						var count = Plots.GetTotalCells(args.Player.Account.Name);
 						switch (count)
 						{
 							case 0:
 								args.Player.SendErrorMessage("你没有属地!");
 								break;
 							case 1:
-								var cell = Plots.GetOnlyCellOfPlayer(args.Player.User.Name);
+								var cell = Plots.GetOnlyCellOfPlayer(args.Player.Account.Name);
 								if (cell == null)
 								{
 									args.Player.SendErrorMessage("载入属地失败! 请联系管理 (不唯一或缺少)");
@@ -432,14 +432,14 @@ namespace PlotMarker
 							return;
 						}
 
-						var count = Plots.GetTotalCells(args.Player.User.Name);
+						var count = Plots.GetTotalCells(args.Player.Account.Name);
 						switch (count)
 						{
 							case 0:
 								args.Player.SendErrorMessage("你没有属地!");
 								break;
 							case 1:
-								var cell = Plots.GetOnlyCellOfPlayer(args.Player.User.Name);
+								var cell = Plots.GetOnlyCellOfPlayer(args.Player.Account.Name);
 								if (cell == null)
 								{
 									args.Player.SendErrorMessage("载入属地失败! 请联系管理 (不唯一或缺少)");
@@ -478,7 +478,7 @@ namespace PlotMarker
 							var cell = Plots.GetCellByPosition(tileX, tileY);
 							if (cell != null)
 							{
-								if (cell.Owner != player.User.Name && !player.HasPermission("pm.admin.editall"))
+								if (cell.Owner != player.Account.Name && !player.HasPermission("pm.admin.editall"))
 								{
 									player.SendErrorMessage("你不是该属地的主人.");
 									return;
@@ -526,7 +526,7 @@ namespace PlotMarker
 			void InternalSetUser(IEnumerable<string> parameters, TSPlayer player, Cell target, bool allow)
 			{
 				var playerName = string.Join(" ", parameters.Skip(1));
-				var user = TShock.Users.GetUserByName(playerName);
+				var user = TShock.UserAccounts.GetUserAccountByName(playerName);
 
 				if (user == null)
 				{
@@ -536,7 +536,7 @@ namespace PlotMarker
 
 				if (target != null)
 				{
-					if (target.Owner != player.User.Name && !player.HasPermission("pm.admin.editall"))
+					if (target.Owner != player.Account.Name && !player.HasPermission("pm.admin.editall"))
 					{
 						player.SendErrorMessage("你不是该属地的主人.");
 						return;
@@ -641,7 +641,7 @@ namespace PlotMarker
 						void InternalChown(IEnumerable<string> parameters, TSPlayer player, Cell target)
 						{
 							var playerName = string.Join(" ", parameters.Skip(1));
-							var user = TShock.Users.GetUserByName(playerName);
+							var user = TShock.UserAccounts.GetUserAccountByName(playerName);
 
 							if (user == null)
 							{
@@ -651,7 +651,7 @@ namespace PlotMarker
 
 							if (target != null)
 							{
-								if (target.Owner != player.User.Name && !player.HasPermission("pm.admin.editall"))
+								if (target.Owner != player.Account.Name && !player.HasPermission("pm.admin.editall"))
 								{
 									player.SendErrorMessage("你不是该属地的主人.");
 									return;
@@ -700,7 +700,7 @@ namespace PlotMarker
 
 		private static void ReturnCell(CommandArgs args)
 		{
-			var count = Plots.GetTotalCells(args.Player.User.Name);
+			var count = Plots.GetTotalCells(args.Player.Account.Name);
 			if (count == 1)
 			{
 				var cell = Plots.GetOnlyCellOfPlayer(args.Player.Name);
@@ -754,7 +754,7 @@ namespace PlotMarker
 			if (index > -1 && index < plot.Cells.Length)
 			{
 				if (string.Equals(plot.Cells[index].Owner, player.Name, StringComparison.Ordinal)
-					|| plot.Cells[index].AllowedIDs?.Contains(player.User.ID) == true
+					|| plot.Cells[index].AllowedIDs?.Contains(player.Account.ID) == true
 					|| player.HasPermission("pm.build.everywhere"))
 				{
 					plot.Cells[index].LastAccess = DateTime.Now;
