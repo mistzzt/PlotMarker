@@ -6,6 +6,7 @@ using System.Linq;
 using Terraria;
 using Terraria.ObjectData;
 using TShockAPI;
+using TShockAPI.Net;
 using Microsoft.Xna.Framework;
 
 namespace PlotMarker
@@ -19,7 +20,10 @@ namespace PlotMarker
 				{ PacketTypes.Tile, HandleTile },
 				{ PacketTypes.PlaceObject, HandlePlaceObject },
 				{ PacketTypes.MassWireOperation, HandleMassWireOperation },
-				{ PacketTypes.LiquidSet, HandleLiquidSet }
+				{ PacketTypes.LiquidSet, HandleLiquidSet },
+				{ PacketTypes.PlaceChest, HandlePlaceChest},
+				{ PacketTypes.PlaceTileEntity, HandlePlaceTileEntity},
+				{ PacketTypes.TileSendSquare, HandleSendTileSquare}
 			};
 
 		public static bool HandleGetData(PacketTypes type, TSPlayer player, MemoryStream data)
@@ -37,6 +41,87 @@ namespace PlotMarker
 					return true;
 				}
 			}
+			return false;
+		}
+
+		private static bool HandleSendTileSquare(GetDataHandlerArgs args)
+		{
+			var player = args.Player;
+			var size = args.Data.ReadInt16();
+			var tileX = args.Data.ReadInt16();
+			var tileY = args.Data.ReadInt16();
+
+			var tiles = new NetTile[size, size];
+			for (int x = 0; x < size; x++)
+			{
+				for (int y = 0; y < size; y++)
+				{
+					tiles[x, y] = new NetTile(args.Data);
+				}
+			}
+
+			for (int x = 0; x < size; x++)
+			{
+				int realx = tileX + x;
+				if (realx < 0 || realx >= Main.maxTilesX)
+					continue;
+
+				for (int y = 0; y < size; y++)
+				{
+					int realy = tileY + y;
+					if (realy < 0 || realy >= Main.maxTilesY)
+						continue;
+
+					if (tiles[x, y].Type == Terraria.ID.TileID.LogicSensor && PlotMarker.BlockModify(args.Player, realx, realy))
+					{
+						args.Player.SendTileSquare(realx, realy, 1);
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		private static bool HandlePlaceTileEntity(GetDataHandlerArgs args)
+		{
+			var x = args.Data.ReadInt16();
+			var y = args.Data.ReadInt16();
+			var type = args.Data.ReadByte();
+
+			if (x < 0 || x >= Main.maxTilesX)
+				return true;
+
+			if (y < 0 || y >= Main.maxTilesY)
+				return true;
+
+			if (PlotMarker.BlockModify(args.Player, x, y))
+			{
+				args.Player.SendTileSquare(x, y, 3);
+				return true;
+			}
+
+			return false;
+		}
+
+		private static bool HandlePlaceChest(GetDataHandlerArgs args)
+		{
+			args.Data.ReadByte();
+			var x = args.Data.ReadInt16();
+			var y = args.Data.ReadInt16();
+
+			if (x < 0 || x >= Main.maxTilesX)
+				return true;
+
+			if (y < 0 || y >= Main.maxTilesY)
+				return true;
+
+			if (PlotMarker.BlockModify(args.Player, x, y))
+			{
+				args.Player.SendTileSquare(x, y, 3);
+				return true;
+			}
+
 			return false;
 		}
 
